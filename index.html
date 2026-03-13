@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Điểm danh QR</title>
+    <link rel="icon" type="image/png" href="TNTT.png" />
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <link rel="stylesheet" href="style.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@200..900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <!-- <img src="TNTT.png" class="logo" /> -->
+    <h2 class="title">HỆ THỐNG ĐIỂM DANH QR</h2>
+
+    <div id="notify" class="notify"></div>
+
+    <div class="cameraContainer">
+      <div id="reader"></div>
+      <div class="scan-frame"></div>
+    </div>
+
+    <button id="scanBtn" onclick="toggleScanner()" class="scanBtn">
+      Bật camera
+    </button>
+    <p>Đã điểm danh: <b id="count">0</b></p>
+
+    <div class="manualInput">
+      <h3>Điểm danh thủ công</h3>
+      <div class="inputWrap">
+        <input
+          type="text"
+          id="manualInput"
+          placeholder="Nhập: ID/Họ và tên"
+          autocomplete="off"
+        />
+
+        <button class="confirmIcon" onclick="manualCheckin()" disabled>
+          <svg viewBox="0 0 24 24" width="25" height="25">
+            <path
+              d="M12 19V5M12 5L6 11M12 5L18 11"
+              stroke="#dcdcdc"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+          <ul id="suggestions"></ul>
+      </div>
+    </div>
+
+    <details class="dropdown">
+      <summary>
+        
+  <svg class="summary-icon" viewBox="0 0 24 24" width="16" height="16" fill="none">
+    <polyline
+      points="5,15 12,8 19,15"
+      stroke="#8e8e8f"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+  Danh sách đã điểm danh
+</summary>
+      <div class="info">
+        <ul id="scanList"></ul>
+      </div>
+    </details>
+    <script src="script.js"></script>
+  </body>
+</html>

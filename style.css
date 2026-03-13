@@ -1,0 +1,404 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: "Chiron GoRound TC", sans-serif;
+
+  background: linear-gradient(15deg, #1f1d16, #26231a, #2f2b21);
+
+  color: white;
+  text-align: center;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* tiêu đề */
+
+.title {
+  padding-top: 20px;
+  font-size: 22px;
+}
+
+/* camera */
+
+.cameraContainer {
+  position: relative;
+  width: 90%;
+  max-width: 400px;
+  margin: 20px auto;
+}
+
+#reader {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* khung scan */
+
+.scan-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  pointer-events: none;
+  display: none;
+}
+
+/* nút scan */
+
+.scanBtn {
+  width: 90%;
+  max-width: 400px;
+
+  padding: 14px 25px;
+  margin: 15px auto;
+
+  font-size: 18px;
+  font-weight: bold;
+
+  cursor: pointer;
+
+  border-radius: 30px;
+
+  background: white;
+
+  box-shadow:
+    0 0 0 2px #141414,
+    0 0 0 5px #ffd400,
+    0 2px 6px rgba(0, 0, 0, 0.25);
+
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease;
+
+  font-family: "Chiron GoRound TC", sans-serif;
+  color: black;
+
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* popup */
+
+/* popup notification */
+
+.notify {
+  position: fixed;
+  width: 90%;
+  max-width: 400px;
+  top: -80px; /* nằm ngoài màn hình */
+  left: 50%;
+  transform: translateX(-50%);
+
+  background: rgba(75, 74, 74, 0.5);
+  backdrop-filter: blur(8px);
+
+  padding: 14px 24px;
+
+  border-radius: 16px;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  color: white;
+
+  z-index: 9999;
+
+  transition: top 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+  pointer-events: none;
+}
+
+/* khi hiện */
+
+.notify.show {
+  top: 20px;
+}
+
+/* nhập thủ công */
+
+.manualInput {
+  width: 90%;
+  max-width: 400px;
+  margin: 20px auto;
+
+  background-color: #1f1d16;
+
+  border-radius: 20px;
+
+  padding-bottom: 25px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.manualInput h3 {
+  font-weight: 500;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+/* logo */
+
+.logo {
+  width: 80px;
+  display: block;
+  margin: 20px auto 10px auto;
+}
+
+/* thông tin */
+
+.info {
+  width: 90%;
+  max-width: 400px;
+  margin: 20px auto;
+}
+
+/* danh sách */
+
+#scanList {
+  text-align: left;
+
+  overflow-y: auto;
+
+  background: rgba(59, 56, 47, 0.5);
+
+  padding: 10px;
+
+  border-radius: 8px;
+}
+
+#scanList li {
+  padding: 5px 0;
+  border-bottom: 1px solid #333;
+}
+
+/* details */
+
+details {
+  width: 90%;
+  max-width: 400px;
+
+  overflow: hidden;
+
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+  background: rgba(255, 255, 255, 0.06);
+
+  border-radius: 30px;
+
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.25),
+    0 2px 10px rgba(0, 0, 0, 0.25);
+
+  margin-bottom: 20px;
+}
+
+
+/* nút nhấn */
+
+button {
+  touch-action: manipulation;
+}
+
+button:active {
+  transform: scale(0.96);
+  filter: brightness(0.85);
+}
+
+summary {
+  color: #8e8e8f;
+
+  padding-top: 10px;
+  padding-bottom: 10px;
+
+  list-style: none;
+  position: relative;
+  cursor: pointer;
+}
+
+p {
+  font-weight: bold;
+}
+
+/* tắt highlight khi tap mobile */
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* wrapper input */
+
+.inputWrap {
+  position: relative;
+
+  width: 90%;
+  max-width: 400px;
+}
+
+/* input */
+
+.inputWrap input {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 14px 50px 14px 20px;
+
+  border-radius: 40px;
+
+  border: none;
+  outline: none;
+
+  background: #dcdcdc;
+
+  color: var(--active-color);
+
+  font-family: inherit;
+  font-size: 16px;
+}
+
+/* icon button */
+
+.confirmIcon {
+  position: absolute;
+
+  right: 8px;
+
+  top: 0;
+  bottom: 0;
+
+  margin: auto 0;
+
+  flex-shrink: 0;
+
+  width: 32px;
+  height: 32px;
+
+  border-radius: 50%;
+  border: none;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  background: rgba(142, 142, 143, 0.6);
+
+  transition:
+    background 0.25s ease,
+    transform 0.15s ease;
+}
+
+/* hiệu ứng nhấn */
+
+.confirmIcon:active {
+  transform: scale(0.9);
+}
+
+/* biến màu */
+
+:root {
+  --placeholder-color: #8e8e8f;
+  --active-color: #1a1a1a;
+}
+
+/* placeholder */
+
+.inputWrap input::placeholder {
+  font-family: inherit;
+  color: var(--placeholder-color);
+}
+
+.inputWrap input::-webkit-input-placeholder {
+  font-family: inherit;
+  color: var(--placeholder-color);
+}
+
+/* icon arrow */
+
+.confirmIcon svg {
+  stroke: var(--placeholder-color);
+  transition: stroke 0.2s;
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+/* khi input có text */
+
+.inputWrap input:not(:placeholder-shown) + .confirmIcon {
+  background: #1a1a1a;
+  transform: scale(1.05);
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::marker {
+  display: none;
+}
+
+.summary-icon {
+  display: inline-block;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  vertical-align: middle;
+  margin-bottom: 2px;
+}
+
+details.is-open .summary-icon {
+  transform: rotate(180deg);
+}
+/* danh sách đề xuất */
+#suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  margin: 4px 0 0 0;
+  padding: 0;
+  list-style: none;
+  background: #2a2720;
+  border-radius: 16px;
+  overflow: hidden;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+#suggestions li {
+  padding: 12px 20px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 15px;
+  color: #dcdcdc;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+#suggestions li:last-child {
+  border-bottom: none;
+}
+
+#suggestions li:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.confirmIcon:disabled {
+
+  pointer-events: none;
+}
