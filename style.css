@@ -105,6 +105,7 @@ body {
   transform: translateX(-50%);
 
   background: rgba(75, 74, 74, 0.5);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 
   padding: 14px 24px;
