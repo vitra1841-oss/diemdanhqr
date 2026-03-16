@@ -3,6 +3,10 @@
 *::after {
   box-sizing: border-box;
 }
+* {
+  appearance: none;
+  -webkit-appearance: none;
+}
 
 html {
   -webkit-text-size-adjust: 100%;
@@ -26,8 +30,27 @@ body {
 /* tiêu đề */
 
 .title {
-  padding-top: 20px;
-  font-size: 22px;
+  padding-top: 24px;
+  padding-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.title-sub {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #8e8e8f;
+}
+
+.title-main {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: white;
 }
 
 /* camera */
@@ -88,11 +111,9 @@ body {
   font-family: "Chiron GoRound TC", sans-serif;
   color: black;
 
-  appearance: none;
-  -webkit-appearance: none;
+  
 }
 
-/* popup */
 
 /* popup notification */
 
@@ -170,25 +191,6 @@ body {
   margin: 20px auto;
 }
 
-/* danh sách */
-
-#scanList {
-  text-align: left;
-
-  overflow-y: auto;
-
-  background: rgba(59, 56, 47, 0.5);
-
-  padding: 10px;
-
-  border-radius: 8px;
-}
-
-#scanList li {
-  padding: 5px 0;
-  border-bottom: 1px solid #333;
-}
-
 /* details */
 
 details {
@@ -231,6 +233,12 @@ summary {
   list-style: none;
   position: relative;
   cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: 1;
 }
 
 p {
@@ -357,10 +365,9 @@ summary::marker {
 }
 
 .summary-icon {
-  display: inline-block;
+  display: block;
+  flex-shrink: 0;
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  vertical-align: middle;
-  margin-bottom: 2px;
 }
 
 details.is-open .summary-icon {
@@ -402,4 +409,102 @@ details.is-open .summary-icon {
 .confirmIcon:disabled {
 
   pointer-events: none;
+}
+#scanTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+}
+
+
+#scanTable th {
+  padding: 8px 10px;
+  font-weight: 700;
+  color: #8e8e8f;
+  
+}
+
+#scanTable td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+#scanTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.col-id {
+  width: 55px;
+  white-space: nowrap;
+}
+
+.col-lop {
+  width: 50px;
+  white-space: nowrap;
+  text-align: right;
+  color: #aaa;
+}
+
+.col-del {
+  width: 32px;
+  text-align: center;
+}
+
+.del-btn {
+  background: none;
+  border: none;
+  color: #e05555;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+  font-size: 12px;
+}
+
+.del-btn:hover {
+  opacity: 1;
+}
+
+#scanTable thead tr {
+  background: rgba(255, 255, 255, 0.08);
+
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#scanTable thead th:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+#scanTable thead th:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.scanBtn-loading svg {
+  animation: spin 1s linear infinite;
+}
+
+.scanBtn-loading {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.scanBtn-loading.show {
+  display: inline-flex;
+}
+
+.scanBtn-text.hide {
+  display: none;
+}
+
+#manualInput::-webkit-search-cancel-button {
+  display: none;
 }

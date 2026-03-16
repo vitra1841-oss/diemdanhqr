@@ -11,7 +11,7 @@ let scanLocked = false;
 
 // link Google Sheet Web App
 const sheetURL =
-  "https://script.google.com/macros/s/AKfycbw04sELEBrdT2v1N0JtBPgluHKUMaCtyg-8flXwxdAb6qutcIqLS8tLWTAJ0-7kG1kCQg/exec";
+  "https://script.google.com/macros/s/AKfycbw9IAJtD8ZvRqezQ6E0SFKMwnNJLTE0xt_WSSLiVDQzDX4RfHqlYFa8_6pHmgu2K-cTVA/exec";
 
 // ============================
 // DATABASE HỌC SINH (LOCAL)
@@ -22,6 +22,21 @@ let studentDB = {}; // { "12001": { hoTen: "...", tenThanh: "..." } }
 const CACHE_KEY = "studentDB_cache";
 const CACHE_TIME_KEY = "studentDB_cache_time";
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 tiếng
+
+function showLoadingDB(show) {
+  const btn = document.getElementById("scanBtn");
+  const input = document.getElementById("manualInput");
+  const btnText = document.getElementById("scanBtnText");
+  const btnLoading = document.getElementById("scanBtnLoading");
+
+  btn.disabled = show;
+  input.disabled = show;
+
+  btnText.classList.toggle("hide", show);
+  btnLoading.classList.toggle("show", show);
+
+  input.placeholder = show ? "Đang tải danh sách..." : "Nhập: ID/Họ và tên";
+}
 
 async function loadStudentDB() {
   try {
@@ -40,9 +55,10 @@ async function loadStudentDB() {
     console.log("Cache loi, se fetch moi");
   }
 
-  console.log("Dang tai danh sach hoc sinh...");
-  try {
-    const res = await fetch(sheetURL + "?type=getAll");
+  console.log("Đang tải danh sách...");
+showLoadingDB(true);
+try {
+  const res = await fetch(sheetURL + "?type=getAll");
     const arr = await res.json();
 
     studentDB = {};
@@ -52,15 +68,18 @@ async function loadStudentDB() {
         hoTen: s.hoTen,
         tenThanh: s.tenThanh,
         idName: tenThanh + s.hoTen,
+        lop: s.lop || "",
       };
     });
 
     localStorage.setItem(CACHE_KEY, JSON.stringify(studentDB));
     localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
     console.log("Da tai:", Object.keys(studentDB).length, "hoc sinh");
+    showLoadingDB(false);
   } catch (err) {
-    console.log("Loi tai danh sach:", err);
-  }
+  console.log("Loi tai danh sach:", err);
+  showLoadingDB(false);
+}
 }
 
 function refreshDB() {
@@ -70,19 +89,6 @@ function refreshDB() {
   } catch (e) {}
   loadStudentDB().then(() => showNotify("🔄 Đã làm mới danh sách"));
 }
-
-// ============================
-// HÀM TÍNH KHỐI TỪ ID
-// ============================
-
-function getGradeFromID(studentID) {
-  let yearPrefix = parseInt(studentID.substring(0, 2));
-  let birthYear = 2000 + yearPrefix;
-  let currentYear = new Date().getFullYear();
-  let grade = currentYear - birthYear - 6;
-  return grade;
-}
-
 // ============================
 // HÀM HIỂN THỊ THÔNG BÁO
 // ============================
@@ -99,22 +105,22 @@ function showNotify(message) {
 }
 
 // ============================
-// HÀM KIỂM TRA ĐỊNH DẠNG QR
-// ============================
-
-function isValidQR(text) {
-  const regex = /^[0-9]{5}-.+/;
-  return regex.test(text);
-}
-
-// ============================
 // HÀM THÊM VÀO DANH SÁCH UI
 // ============================
 
 function addToList(studentID, studentName) {
-  let li = document.createElement("li");
-  li.textContent = studentID + " | " + studentName;
-  document.getElementById("scanList").appendChild(li);
+  const s = studentDB[studentID];
+  const lop = s ? s.lop : "";
+
+  const tbody = document.getElementById("scanTableBody");
+  const tr = document.createElement("tr");
+  tr.dataset.id = studentID;
+  tr.innerHTML =
+    "<td class='col-id'>" + studentID + "</td>" +
+    "<td class='col-name'>" + studentName + "</td>" +
+    "<td class='col-lop'>" + (lop || "—") + "</td>" +
+    "<td class='col-del'><button class='del-btn' onclick='deleteAttendance(\"" + studentID + "\")'>✕</button></td>";
+  tbody.appendChild(tr);
 
   const detailsDropdown = document.querySelector(".dropdown");
   if (detailsDropdown.open) {
@@ -136,29 +142,33 @@ function onScanSuccess(decodedText) {
   if (now - lastScanTime < 1200) return;
   lastScanTime = now;
 
-  if (!isValidQR(decodedText)) {
-    showNotify("❌ Sai định dạng QR");
-    return;
-  }
+  const studentID = decodedText.trim();
 
-  let parts = decodedText.trim().split("-");
-  let studentID = parts[0];
-  let studentName = parts.slice(1).join("-").normalize("NFC");
-  let grade = getGradeFromID(studentID);
+if (!studentDB[studentID]) {
+  showNotify("❌ Không tìm thấy học sinh");
+  return;
+}
 
-  if (scannedStudents[studentID]) {
-    showNotify("⚠️ Đã điểm danh rồi");
-    return;
-  }
+if (scannedStudents[studentID]) {
+  showNotify("⚠️ Đã điểm danh rồi");
+  return;
+}
 
-  scannedStudents[studentID] = studentName;
-  addToList(studentID, studentName);
-  showNotify("✅ Điểm danh thành công");
+const s = studentDB[studentID];
+const studentName = s.idName;
+const lop = s.lop || "";
 
-  fetch(sheetURL, {
-    method: "POST",
-    body: JSON.stringify({ id: studentID, name: studentName, grade: grade }),
-  }).catch(() => console.log("Sheet error"));
+scannedStudents[studentID] = studentName;
+try {
+  localStorage.setItem(getAttendanceCacheKey(), JSON.stringify(scannedStudents));
+} catch(e) {}
+addToList(studentID, studentName);
+showNotify("✅ Điểm danh thành công");
+
+fetch(sheetURL, {
+  method: "POST",
+  body: JSON.stringify({ id: studentID, name: studentName, lop: lop }),
+}).catch(() => console.log("Sheet error"));
 }
 
 // ============================
@@ -187,12 +197,12 @@ function toggleScanner() {
       )
       .then(() => {
         scanning = true;
-        document.getElementById("scanBtn").innerText = "Tắt Camera";
+        document.getElementById("scanBtnText").textContent = "Tắt Camera";
         document.querySelector(".scan-frame").style.display = "block";
       })
       .catch(() => {
         scanning = false;
-        document.getElementById("scanBtn").innerText = "Bật Camera";
+        document.getElementById("scanBtnText").textContent = "Bật Camera";
         document.querySelector(".scan-frame").style.display = "none";
 
         if (html5QrCode) {
@@ -207,12 +217,12 @@ function toggleScanner() {
       .stop()
       .then(() => {
         scanning = false;
-        document.getElementById("scanBtn").innerText = "Bật Camera";
+        document.getElementById("scanBtnText").textContent = "Bật Camera";
         document.querySelector(".scan-frame").style.display = "none";
       })
       .catch(() => {
         scanning = false;
-        document.getElementById("scanBtn").innerText = "Bật Camera";
+        document.getElementById("scanBtnText").textContent = "Tắt Camera";
         document.querySelector(".scan-frame").style.display = "none";
       });
   }
@@ -264,14 +274,17 @@ function manualCheckin() {
   }
 
   scannedStudents[foundID] = foundName;
+  try {
+  localStorage.setItem(getAttendanceCacheKey(), JSON.stringify(scannedStudents));
+} catch(e) {}
   addToList(foundID, foundName);
   showNotify("✅ Điểm danh thành công");
 
-  const grade = getGradeFromID(foundID);
-  fetch(sheetURL, {
-    method: "POST",
-    body: JSON.stringify({ id: foundID, name: foundName, grade: grade }),
-  }).catch(() => console.log("Sheet error"));
+const lop = studentDB[foundID]?.lop || "";
+fetch(sheetURL, {
+  method: "POST",
+  body: JSON.stringify({ id: foundID, name: foundName, lop: lop }),
+}).catch(() => console.log("Sheet error"));
 }
 
 // ============================
@@ -305,7 +318,22 @@ function showSuggestions(value) {
 
   matches.forEach((m) => {
     const li = document.createElement("li");
-    li.textContent = m.id + " | " + m.idName;
+      li.style.display = "flex";
+      li.style.justifyContent = "space-between";
+      li.style.alignItems = "center";
+      li.style.gap = "8px";
+
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = m.id + " | " + m.idName;
+
+      const lopSpan = document.createElement("span");
+      lopSpan.textContent = m.lop || "";
+      lopSpan.style.flexShrink = "0";
+      lopSpan.style.color = "#8e8e8f";
+      lopSpan.style.fontSize = "13px";
+
+      li.appendChild(nameSpan);
+      li.appendChild(lopSpan);
 
     // dùng click để tránh lỗi scroll mobile
     li.addEventListener("click", () => {
@@ -376,8 +404,68 @@ summary.addEventListener("click", (e) => {
   }
 });
 
+
 // ============================
 // KHỞI ĐỘNG
 // ============================
 
-loadStudentDB();
+function restoreAttendance() {
+  try {
+    // xóa tất cả cache attendance cũ
+    Object.keys(localStorage)
+      .filter(k => k.startsWith("attendance_") && k !== getAttendanceCacheKey())
+      .forEach(k => localStorage.removeItem(k));
+
+    // load cache hôm nay
+    const saved = localStorage.getItem(getAttendanceCacheKey());
+    if (saved) {
+      const data = JSON.parse(saved);
+      for (let id in data) {
+        scannedStudents[id] = data[id];
+        addToList(id, data[id]);
+      }
+    }
+  } catch(e) {}
+}
+
+
+function deleteAttendance(studentID) {
+  if (!confirm("Xóa điểm danh " + (scannedStudents[studentID] || studentID) + "?")) return;
+
+  // xóa khỏi object
+  delete scannedStudents[studentID];
+
+  // xóa khỏi localStorage
+  try {
+    localStorage.setItem(getAttendanceCacheKey(), JSON.stringify(scannedStudents));
+  } catch(e) {}
+
+  // xóa khỏi UI
+  const tr = document.querySelector("#scanTableBody tr[data-id='" + studentID + "']");
+if (tr) tr.remove();
+
+const detailsDropdown = document.querySelector(".dropdown");
+if (detailsDropdown.open) {
+  requestAnimationFrame(() => {
+    detailsDropdown.style.height = detailsDropdown.scrollHeight + "px";
+  });
+}
+
+  // cập nhật count
+  document.getElementById("count").textContent = Object.keys(scannedStudents).length;
+
+  // gửi lên Apps Script xóa
+  fetch(sheetURL, {
+    method: "POST",
+    body: JSON.stringify({ action: "delete", id: studentID }),
+  }).catch(() => console.log("Delete error"));
+}
+
+function getAttendanceCacheKey() {
+  const now = new Date();
+  const date = now.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+  // sau này đổi thành: date + "_" + sessionID
+  return "attendance_" + date;
+}
+loadStudentDB().then(() => restoreAttendance());
+
