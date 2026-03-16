@@ -11,17 +11,189 @@ let scanLocked = false;
 
 // link Google Sheet Web App
 const sheetURL =
-  "https://script.google.com/macros/s/AKfycbw9IAJtD8ZvRqezQ6E0SFKMwnNJLTE0xt_WSSLiVDQzDX4RfHqlYFa8_6pHmgu2K-cTVA/exec";
+  "https://script.google.com/macros/s/AKfycbxQBIJVhf64r7LoAs2vOi4RxqHucQn_WTkNY_2Ay-80pyBQ2aJzgB0JlMU7gytLajBgSA/exec";
+
+// ============================
+// TEST MODE
+// ============================
+
+const TEST_MODE_ENABLED = true;
+let testSessionOverride = null;
+
+// ============================
+// CONFIG CA HỌC
+// ============================
+
+const SESSION_CONFIG = [
+  {
+    id: "Thánh lễ Chúa Nhật (6h45-9h00)",
+    label: "TLCN",
+    day: 0,
+    startH: 6,
+    startM: 45,
+    endH: 9,
+    endM: 0,
+  },
+  {
+    id: "Giáo Lý Chúa Nhật (9h15-10h45)",
+    label: "GLCN",
+    day: 0,
+    startH: 9,
+    startM: 15,
+    endH: 10,
+    endM: 45,
+  },
+  {
+    id: "Giáo Lý Thứ 3 (17h30-19h30)",
+    label: "GLT3",
+    day: 2,
+    startH: 17,
+    startM: 30,
+    endH: 19,
+    endM: 30,
+  },
+  {
+    id: "Thánh lễ Thứ 5 (17h30-19h30)",
+    label: "TLT5",
+    day: 4,
+    startH: 17,
+    startM: 0,
+    endH: 19,
+    endM: 30,
+  },
+];
+
+function getCurrentSession() {
+  if (testSessionOverride) return testSessionOverride;
+
+  const now = new Date();
+  const day = now.getDay();
+  const time = now.getHours() * 60 + now.getMinutes();
+
+  for (const s of SESSION_CONFIG) {
+    if (
+      s.day === day &&
+      time >= s.startH * 60 + s.startM &&
+      time <= s.endH * 60 + s.endM
+    ) {
+      return s.id;
+    }
+  }
+  return null;
+}
+
+function pad(n) {
+  return n < 10 ? "0" + n : String(n);
+}
+
+function getNextSessionInfo() {
+  const now = new Date();
+  const day = now.getDay();
+  const time = now.getHours() * 60 + now.getMinutes();
+  const dayNames = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+
+  for (let d = 0; d <= 7; d++) {
+    const checkDay = (day + d) % 7;
+    for (const s of SESSION_CONFIG) {
+      if (s.day !== checkDay) continue;
+      const startTime = s.startH * 60 + s.startM;
+      if (d === 0 && startTime <= time) continue;
+      return (
+        "Ca tiếp: " +
+        s.label +
+        " (" +
+        dayNames[checkDay] +
+        " " +
+        pad(s.startH) +
+        ":" +
+        pad(s.startM) +
+        ")"
+      );
+    }
+  }
+  return "";
+}
+
+// ============================
+// KHOÁ / MỞ UI THEO CA
+// ============================
+
+function updateSessionStatus() {
+  const session = getCurrentSession();
+  const banner = document.getElementById("offHourBanner");
+
+  if (session) {
+    if (banner) banner.style.display = "none";
+    document.getElementById("scanBtn").disabled = false;
+    document.getElementById("manualInput").disabled = false;
+  } else {
+    // Dừng camera nếu đang chạy
+    if (scanning && html5QrCode) {
+      html5QrCode.stop().catch(() => {});
+      scanning = false;
+      document.getElementById("scanBtnText").textContent = "Bật Camera";
+      document.querySelector(".scan-frame").style.display = "none";
+    }
+    document.getElementById("scanBtn").disabled = true;
+    document.getElementById("manualInput").disabled = true;
+
+    if (banner) {
+      const nextInfo = getNextSessionInfo();
+      banner.style.display = "block";
+      banner.innerHTML =
+        "🔒 Đang không trong thời gian điểm danh" +
+        (nextInfo ? "<br><small>" + nextInfo + "</small>" : "");
+    }
+  }
+}
+
+setInterval(updateSessionStatus, 60 * 1000);
+
+// ============================
+// TEST MODE PANEL
+// ============================
+
+function initTestPanel() {
+  if (!TEST_MODE_ENABLED) return;
+  const panel = document.getElementById("testPanel");
+  if (!panel) return;
+  panel.style.display = "block";
+
+  const btnContainer = document.getElementById("testSessionBtns");
+  SESSION_CONFIG.forEach((s) => {
+    const btn = document.createElement("button");
+    btn.textContent = s.label;
+    btn.className = "test-btn";
+    btn.onclick = () => setTestSession(s.id, btn);
+    btnContainer.appendChild(btn);
+  });
+
+  const realBtn = document.createElement("button");
+  realBtn.textContent = "Giờ thật";
+  realBtn.className = "test-btn test-btn-real";
+  realBtn.onclick = () => setTestSession(null, realBtn);
+  btnContainer.appendChild(realBtn);
+}
+
+function setTestSession(sessionID, clickedBtn) {
+  testSessionOverride = sessionID;
+  document
+    .querySelectorAll(".test-btn")
+    .forEach((b) => b.classList.remove("active"));
+  if (clickedBtn) clickedBtn.classList.add("active");
+  updateSessionStatus();
+  if (sessionID) showNotify("🧪 Test ca: " + sessionID);
+}
 
 // ============================
 // DATABASE HỌC SINH (LOCAL)
 // ============================
 
-let studentDB = {}; // { "12001": { hoTen: "...", tenThanh: "..." } }
+let studentDB = {};
 
 const CACHE_KEY = "studentDB_cache";
 const CACHE_TIME_KEY = "studentDB_cache_time";
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 tiếng
+const CACHE_DURATION = 24 * 60 * 60 * 1000;
 
 function showLoadingDB(show) {
   const btn = document.getElementById("scanBtn");
@@ -42,28 +214,28 @@ async function loadStudentDB() {
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
-
-    if (cached && cachedTime) {
-      const age = Date.now() - parseInt(cachedTime);
-      if (age < CACHE_DURATION) {
-        studentDB = JSON.parse(cached);
-        console.log("Đã tải:", Object.keys(studentDB).length, "hoc sinh");
-        return;
-      }
+    if (
+      cached &&
+      cachedTime &&
+      Date.now() - parseInt(cachedTime) < CACHE_DURATION
+    ) {
+      studentDB = JSON.parse(cached);
+      console.log("Đã tải:", Object.keys(studentDB).length, "học sinh");
+      return;
     }
   } catch (e) {
-    console.log("Cache loi, se fetch moi");
+    console.log("Cache lỗi, sẽ fetch mới");
   }
 
   console.log("Đang tải danh sách...");
-showLoadingDB(true);
-try {
-  const res = await fetch(sheetURL + "?type=getAll");
+  showLoadingDB(true);
+  try {
+    const res = await fetch(sheetURL + "?type=getAll");
     const arr = await res.json();
 
     studentDB = {};
     arr.forEach((s) => {
-      const tenThanh = s.tenThanh ? s.tenThanh + " " : ""; // ← khai báo trước
+      const tenThanh = s.tenThanh ? s.tenThanh + " " : "";
       studentDB[s.id] = {
         hoTen: s.hoTen,
         tenThanh: s.tenThanh,
@@ -74,12 +246,12 @@ try {
 
     localStorage.setItem(CACHE_KEY, JSON.stringify(studentDB));
     localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
-    console.log("Da tai:", Object.keys(studentDB).length, "hoc sinh");
+    console.log("Đã tải:", Object.keys(studentDB).length, "học sinh");
     showLoadingDB(false);
   } catch (err) {
-  console.log("Loi tai danh sach:", err);
-  showLoadingDB(false);
-}
+    console.log("Lỗi tải danh sách:", err);
+    showLoadingDB(false);
+  }
 }
 
 function refreshDB() {
@@ -89,6 +261,7 @@ function refreshDB() {
   } catch (e) {}
   loadStudentDB().then(() => showNotify("🔄 Đã làm mới danh sách"));
 }
+
 // ============================
 // HÀM HIỂN THỊ THÔNG BÁO
 // ============================
@@ -116,10 +289,18 @@ function addToList(studentID, studentName) {
   const tr = document.createElement("tr");
   tr.dataset.id = studentID;
   tr.innerHTML =
-    "<td class='col-id'>" + studentID + "</td>" +
-    "<td class='col-name'>" + studentName + "</td>" +
-    "<td class='col-lop'>" + (lop || "—") + "</td>" +
-    "<td class='col-del'><button class='del-btn' onclick='deleteAttendance(\"" + studentID + "\")'>✕</button></td>";
+    "<td class='col-id'>" +
+    studentID +
+    "</td>" +
+    "<td class='col-name'>" +
+    studentName +
+    "</td>" +
+    "<td class='col-lop'>" +
+    (lop || "—") +
+    "</td>" +
+    "<td class='col-del'><button class='del-btn' onclick='deleteAttendance(\"" +
+    studentID +
+    "\")'>✕</button></td>";
   tbody.appendChild(tr);
 
   const detailsDropdown = document.querySelector(".dropdown");
@@ -138,37 +319,48 @@ function addToList(studentID, studentName) {
 function onScanSuccess(decodedText) {
   if (scanLocked) return;
 
-  let now = Date.now();
+  const now = Date.now();
   if (now - lastScanTime < 1200) return;
   lastScanTime = now;
 
   const studentID = decodedText.trim();
 
-if (!studentDB[studentID]) {
-  showNotify("❌ Không tìm thấy học sinh");
-  return;
-}
+  if (!studentDB[studentID]) {
+    showNotify("❌ Không tìm thấy học sinh");
+    return;
+  }
+  if (scannedStudents[studentID]) {
+    showNotify("⚠️ Đã điểm danh rồi");
+    return;
+  }
 
-if (scannedStudents[studentID]) {
-  showNotify("⚠️ Đã điểm danh rồi");
-  return;
-}
+  const session = getCurrentSession();
+  if (!session) {
+    showNotify("🔒 Ngoài giờ điểm danh");
+    return;
+  }
 
-const s = studentDB[studentID];
-const studentName = s.idName;
-const lop = s.lop || "";
+  const s = studentDB[studentID];
+  const studentName = s.idName;
+  const lop = s.lop || "";
 
-scannedStudents[studentID] = studentName;
-try {
-  localStorage.setItem(getAttendanceCacheKey(), JSON.stringify(scannedStudents));
-} catch(e) {}
-addToList(studentID, studentName);
-showNotify("✅ Điểm danh thành công");
+  scannedStudents[studentID] = studentName;
+  try {
+    localStorage.setItem(
+      getAttendanceCacheKey(),
+      JSON.stringify(scannedStudents),
+    );
+  } catch (e) {}
+  addToList(studentID, studentName);
 
-fetch(sheetURL, {
-  method: "POST",
-  body: JSON.stringify({ id: studentID, name: studentName, lop: lop }),
-}).catch(() => console.log("Sheet error"));
+  const cfg = SESSION_CONFIG.find((c) => c.id === session);
+  const label = cfg ? cfg.label : session;
+  showNotify("✅ Điểm danh ca " + label + " thành công");
+
+  fetch(sheetURL, {
+    method: "POST",
+    body: JSON.stringify({ id: studentID, name: studentName, lop, session }),
+  }).catch(() => console.log("Sheet error"));
 }
 
 // ============================
@@ -176,6 +368,12 @@ fetch(sheetURL, {
 // ============================
 
 function toggleScanner() {
+  const session = getCurrentSession();
+  if (!session) {
+    showNotify("🔒 Ngoài giờ điểm danh");
+    return;
+  }
+
   if (!scanning) {
     if (html5QrCode) {
       html5QrCode.clear();
@@ -188,8 +386,8 @@ function toggleScanner() {
         { facingMode: "environment" },
         {
           fps: 10,
-          qrbox: function (viewfinderWidth, viewfinderHeight) {
-            const size = Math.min(viewfinderWidth, viewfinderHeight) * 0.75;
+          qrbox: (w, h) => {
+            const size = Math.min(w, h) * 0.75;
             return { width: size, height: size };
           },
         },
@@ -204,12 +402,10 @@ function toggleScanner() {
         scanning = false;
         document.getElementById("scanBtnText").textContent = "Bật Camera";
         document.querySelector(".scan-frame").style.display = "none";
-
         if (html5QrCode) {
           html5QrCode.clear();
           html5QrCode = null;
         }
-
         showNotify("❌ Không thể truy cập camera");
       });
   } else {
@@ -222,7 +418,7 @@ function toggleScanner() {
       })
       .catch(() => {
         scanning = false;
-        document.getElementById("scanBtnText").textContent = "Tắt Camera";
+        document.getElementById("scanBtnText").textContent = "Bật Camera";
         document.querySelector(".scan-frame").style.display = "none";
       });
   }
@@ -233,8 +429,14 @@ function toggleScanner() {
 // ============================
 
 function manualCheckin() {
-  let input = document.getElementById("manualInput");
-  let value = input.value.trim().replace(/\s+/g, " ").normalize("NFC");
+  const session = getCurrentSession();
+  if (!session) {
+    showNotify("🔒 Ngoài giờ điểm danh");
+    return;
+  }
+
+  const input = document.getElementById("manualInput");
+  const value = input.value.trim().replace(/\s+/g, " ").normalize("NFC");
 
   let foundID = null;
   let foundName = null;
@@ -246,12 +448,10 @@ function manualCheckin() {
     }
   } else {
     const valueLower = value.toLowerCase().normalize("NFC");
-
     for (let id in studentDB) {
       const s = studentDB[id];
       const hoTen = s.hoTen.toLowerCase().normalize("NFC");
       const full = (s.tenThanh + " " + s.hoTen).toLowerCase().normalize("NFC");
-
       if (hoTen === valueLower || full === valueLower) {
         foundID = id;
         foundName = s.idName;
@@ -267,7 +467,6 @@ function manualCheckin() {
     showNotify("❌ Không tìm thấy thông tin");
     return;
   }
-
   if (scannedStudents[foundID]) {
     showNotify("⚠️ Đã điểm danh rồi");
     return;
@@ -275,16 +474,22 @@ function manualCheckin() {
 
   scannedStudents[foundID] = foundName;
   try {
-  localStorage.setItem(getAttendanceCacheKey(), JSON.stringify(scannedStudents));
-} catch(e) {}
+    localStorage.setItem(
+      getAttendanceCacheKey(),
+      JSON.stringify(scannedStudents),
+    );
+  } catch (e) {}
   addToList(foundID, foundName);
-  showNotify("✅ Điểm danh thành công");
 
-const lop = studentDB[foundID]?.lop || "";
-fetch(sheetURL, {
-  method: "POST",
-  body: JSON.stringify({ id: foundID, name: foundName, lop: lop }),
-}).catch(() => console.log("Sheet error"));
+  const cfg = SESSION_CONFIG.find((c) => c.id === session);
+  const label = cfg ? cfg.label : session;
+  showNotify("✅ Điểm danh ca " + label + " thành công");
+
+  const lop = studentDB[foundID]?.lop || "";
+  fetch(sheetURL, {
+    method: "POST",
+    body: JSON.stringify({ id: foundID, name: foundName, lop, session }),
+  }).catch(() => console.log("Sheet error"));
 }
 
 // ============================
@@ -294,7 +499,6 @@ fetch(sheetURL, {
 function showSuggestions(value) {
   const list = document.getElementById("suggestions");
   list.innerHTML = "";
-
   if (value.length < 1) return;
 
   const valueLower = value.toLowerCase().normalize("NFC");
@@ -311,42 +515,40 @@ function showSuggestions(value) {
       full.includes(valueLower)
     ) {
       matches.push({ id, ...s });
-
-      if (matches.length >= 5) break; // tối đa 5 gợi ý
+      if (matches.length >= 5) break;
     }
   }
 
   matches.forEach((m) => {
     const li = document.createElement("li");
-      li.style.display = "flex";
-      li.style.justifyContent = "space-between";
-      li.style.alignItems = "center";
-      li.style.gap = "8px";
+    li.style.display = "flex";
+    li.style.justifyContent = "space-between";
+    li.style.alignItems = "center";
+    li.style.gap = "8px";
 
-      const nameSpan = document.createElement("span");
-      nameSpan.textContent = m.id + " | " + m.idName;
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = m.id + " | " + m.idName;
 
-      const lopSpan = document.createElement("span");
-      lopSpan.textContent = m.lop || "";
-      lopSpan.style.flexShrink = "0";
-      lopSpan.style.color = "#8e8e8f";
-      lopSpan.style.fontSize = "13px";
+    const lopSpan = document.createElement("span");
+    lopSpan.textContent = m.lop || "";
+    lopSpan.style.flexShrink = "0";
+    lopSpan.style.color = "#8e8e8f";
+    lopSpan.style.fontSize = "13px";
 
-      li.appendChild(nameSpan);
-      li.appendChild(lopSpan);
+    li.appendChild(nameSpan);
+    li.appendChild(lopSpan);
 
-    // dùng click để tránh lỗi scroll mobile
     li.addEventListener("click", () => {
       document.getElementById("manualInput").value = m.id;
       list.innerHTML = "";
       manualCheckin();
     });
-
     list.appendChild(li);
   });
 }
+
 // ============================
-// KEYBOARD ENTER
+// KEYBOARD & INPUT EVENTS
 // ============================
 
 document
@@ -358,18 +560,18 @@ document
     }
   });
 
-  // khóa/mở nút confirm theo input
 const confirmBtn = document.querySelector(".confirmIcon");
 document.getElementById("manualInput").addEventListener("input", function () {
   confirmBtn.disabled = this.value.trim() === "";
   showSuggestions(this.value.trim());
 });
-// ẩn suggestions khi blur
+
 document.getElementById("manualInput").addEventListener("blur", function () {
   setTimeout(() => {
     document.getElementById("suggestions").innerHTML = "";
   }, 150);
 });
+
 // ============================
 // DROPDOWN ANIMATION
 // ============================
@@ -383,19 +585,16 @@ summary.addEventListener("click", (e) => {
   if (!details.open) {
     details.open = true;
     details.classList.add("is-open");
-    const startHeight = summary.offsetHeight;
     const endHeight = details.scrollHeight;
-    details.style.height = startHeight + "px";
+    details.style.height = summary.offsetHeight + "px";
     requestAnimationFrame(() => {
       details.style.height = endHeight + "px";
     });
   } else {
-    const startHeight = details.scrollHeight;
     details.classList.remove("is-open");
-    const endHeight = summary.offsetHeight;
-    details.style.height = startHeight + "px";
+    details.style.height = details.scrollHeight + "px";
     requestAnimationFrame(() => {
-      details.style.height = endHeight + "px";
+      details.style.height = summary.offsetHeight + "px";
     });
     details.addEventListener("transitionend", function handler() {
       details.open = false;
@@ -404,19 +603,69 @@ summary.addEventListener("click", (e) => {
   }
 });
 
+// ============================
+// XÓA ĐIỂM DANH
+// ============================
+
+function deleteAttendance(studentID) {
+  if (
+    !confirm("Xóa điểm danh " + (scannedStudents[studentID] || studentID) + "?")
+  )
+    return;
+
+  delete scannedStudents[studentID];
+  try {
+    localStorage.setItem(
+      getAttendanceCacheKey(),
+      JSON.stringify(scannedStudents),
+    );
+  } catch (e) {}
+
+  const tr = document.querySelector(
+    "#scanTableBody tr[data-id='" + studentID + "']",
+  );
+  if (tr) tr.remove();
+
+  const detailsDropdown = document.querySelector(".dropdown");
+  if (detailsDropdown.open) {
+    requestAnimationFrame(() => {
+      detailsDropdown.style.height = detailsDropdown.scrollHeight + "px";
+    });
+  }
+
+  document.getElementById("count").textContent =
+    Object.keys(scannedStudents).length;
+
+  const session = getCurrentSession();
+  fetch(sheetURL, {
+    method: "POST",
+    body: JSON.stringify({ action: "delete", id: studentID, session }),
+  }).catch(() => console.log("Delete error"));
+
+  showNotify("🗑️ Đã xóa điểm danh");
+}
 
 // ============================
-// KHỞI ĐỘNG
+// CACHE ĐIỂM DANH THEO NGÀY
 // ============================
+
+function getAttendanceCacheKey() {
+  const date = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+  });
+  return "attendance_" + date;
+}
 
 function restoreAttendance() {
   try {
-    // xóa tất cả cache attendance cũ
+    // Xóa cache cũ hơn hôm nay
     Object.keys(localStorage)
-      .filter(k => k.startsWith("attendance_") && k !== getAttendanceCacheKey())
-      .forEach(k => localStorage.removeItem(k));
+      .filter(
+        (k) => k.startsWith("attendance_") && k !== getAttendanceCacheKey(),
+      )
+      .forEach((k) => localStorage.removeItem(k));
 
-    // load cache hôm nay
+    // Khôi phục điểm danh hôm nay
     const saved = localStorage.getItem(getAttendanceCacheKey());
     if (saved) {
       const data = JSON.parse(saved);
@@ -425,47 +674,13 @@ function restoreAttendance() {
         addToList(id, data[id]);
       }
     }
-  } catch(e) {}
+  } catch (e) {}
 }
 
+// ============================
+// KHỞI ĐỘNG
+// ============================
 
-function deleteAttendance(studentID) {
-  if (!confirm("Xóa điểm danh " + (scannedStudents[studentID] || studentID) + "?")) return;
-
-  // xóa khỏi object
-  delete scannedStudents[studentID];
-
-  // xóa khỏi localStorage
-  try {
-    localStorage.setItem(getAttendanceCacheKey(), JSON.stringify(scannedStudents));
-  } catch(e) {}
-
-  // xóa khỏi UI
-  const tr = document.querySelector("#scanTableBody tr[data-id='" + studentID + "']");
-if (tr) tr.remove();
-
-const detailsDropdown = document.querySelector(".dropdown");
-if (detailsDropdown.open) {
-  requestAnimationFrame(() => {
-    detailsDropdown.style.height = detailsDropdown.scrollHeight + "px";
-  });
-}
-
-  // cập nhật count
-  document.getElementById("count").textContent = Object.keys(scannedStudents).length;
-
-  // gửi lên Apps Script xóa
-  fetch(sheetURL, {
-    method: "POST",
-    body: JSON.stringify({ action: "delete", id: studentID }),
-  }).catch(() => console.log("Delete error"));
-}
-
-function getAttendanceCacheKey() {
-  const now = new Date();
-  const date = now.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
-  // sau này đổi thành: date + "_" + sessionID
-  return "attendance_" + date;
-}
 loadStudentDB().then(() => restoreAttendance());
-
+updateSessionStatus();
+initTestPanel();

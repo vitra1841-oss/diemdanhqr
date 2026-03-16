@@ -3,13 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <title>Điểm danh QR</title>
     <link rel="icon" type="image/png" href="TNTT.png" />
     <script src="https://unpkg.com/html5-qrcode"></script>
-
     <link rel="stylesheet" href="style.css" />
-
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -19,13 +16,15 @@
   </head>
 
   <body>
-
-      <div class="title">
-        <span class="title-sub">Xứ Đoàn Đức Mẹ Vô Nhiễm</span>
-        <span class="title-main">Điểm Danh QR</span>
-      </div>
+    <div class="title">
+      <span class="title-sub">Xứ Đoàn Đức Mẹ Vô Nhiễm</span>
+      <span class="title-main">Điểm Danh QR</span>
+    </div>
 
     <div id="notify" class="notify"></div>
+
+    <!-- Banner ngoài giờ -->
+    <div id="offHourBanner" class="off-hour-banner" style="display: none"></div>
 
     <div class="cameraContainer">
       <div id="reader"></div>
@@ -33,14 +32,25 @@
     </div>
 
     <button id="scanBtn" onclick="toggleScanner()" class="scanBtn">
-  <span id="scanBtnText" class="scanBtn-text">Bật Camera</span>
-<span id="scanBtnLoading" class="scanBtn-loading">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-    </svg>
-    Đang tải...
-  </span>
-</button>
+      <span id="scanBtnText" class="scanBtn-text">Bật Camera</span>
+      <span id="scanBtnLoading" class="scanBtn-loading">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+        >
+          <path
+            d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+          />
+        </svg>
+        Đang tải...
+      </span>
+    </button>
+
     <p>Đã điểm danh: <b id="count">0</b></p>
 
     <div class="manualInput">
@@ -52,7 +62,6 @@
           placeholder="Nhập: ID/Họ và tên"
           autocomplete="off"
         />
-
         <button class="confirmIcon" onclick="manualCheckin()" disabled>
           <svg viewBox="0 0 24 24" width="25" height="25">
             <path
@@ -64,24 +73,29 @@
             />
           </svg>
         </button>
-          <ul id="suggestions"></ul>
+        <ul id="suggestions"></ul>
       </div>
     </div>
 
     <details class="dropdown">
       <summary>
-        
-  <svg class="summary-icon" viewBox="0 0 24 24" width="16" height="16" fill="none">
-    <polyline
-      points="5,15 12,8 19,15"
-      stroke="#8e8e8f"
-      stroke-width="2.5"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-  </svg>
-  Danh sách đã điểm danh
-</summary>
+        <svg
+          class="summary-icon"
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+        >
+          <polyline
+            points="5,15 12,8 19,15"
+            stroke="#8e8e8f"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        Danh sách đã điểm danh
+      </summary>
       <div class="info">
         <table id="scanTable">
           <thead>
@@ -96,6 +110,13 @@
         </table>
       </div>
     </details>
+
+    <!-- Test Mode Panel (ẩn khi TEST_MODE_ENABLED = false) -->
+    <div id="testPanel" class="test-panel" style="display: none">
+      <div class="test-panel-title">🧪 Test Mode</div>
+      <div id="testSessionBtns" class="test-session-btns"></div>
+    </div>
+
     <script src="script.js"></script>
   </body>
 </html>
