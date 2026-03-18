@@ -12,7 +12,7 @@ let scanLocked = false;
 const sheetURL =
   "https://script.google.com/macros/s/AKfycbxQBIJVhf64r7LoAs2vOi4RxqHucQn_WTkNY_2Ay-80pyBQ2aJzgB0JlMU7gytLajBgSA/exec"; // URL điểm danh
 const indexURL = 
-  "/api/students"; // URL tổng hợp
+  "https://script.google.com/macros/s/AKfycbwGX253liSmk3kahAlB5bK12jg92mfB7c8ITpLiZaV1f-vyPcBPNeCLt9hMaeMg9Ru8Xg/exec"; // URL tổng hợp
 
 // ============================
 // TEST MODE
@@ -207,11 +207,31 @@ function showLoadingDB(show) {
   input.placeholder = show ? "Đang tải danh sách..." : "Nhập: ID/Họ và tên";
 }
 
+const CACHE_KEY = "studentDB_cache";
+const CACHE_TIME_KEY = "studentDB_cache_time";
+const CACHE_DURATION = 24 * 60 * 60 * 1000;
+
 async function loadStudentDB() {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+    if (
+      cached &&
+      cachedTime &&
+      Date.now() - parseInt(cachedTime) < CACHE_DURATION
+    ) {
+      studentDB = JSON.parse(cached);
+      console.log("Đã tải:", Object.keys(studentDB).length, "học sinh");
+      return;
+    }
+  } catch (e) {
+    console.log("Cache lỗi, sẽ fetch mới");
+  }
+
   console.log("Đang tải danh sách...");
   showLoadingDB(true);
   try {
-    const res = await fetch(indexURL);
+    const res = await fetch(indexURL + "?type=getAll");
     const arr = await res.json();
 
     studentDB = {};
@@ -225,8 +245,11 @@ async function loadStudentDB() {
       };
     });
 
+    localStorage.setItem(CACHE_KEY, JSON.stringify(studentDB));
+    localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
     console.log("Đã tải:", Object.keys(studentDB).length, "học sinh");
     showLoadingDB(false);
+    updateSessionStatus();
   } catch (err) {
     console.log("Lỗi tải danh sách:", err);
     showLoadingDB(false);
@@ -235,9 +258,11 @@ async function loadStudentDB() {
 }
 
 function refreshDB() {
-  fetch("/api/students/refresh", { method: "POST" })
-    .then(() => loadStudentDB())
-    .then(() => showNotify("🔄 Đã làm mới danh sách"));
+  try {
+    localStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(CACHE_TIME_KEY);
+  } catch (e) {}
+  loadStudentDB().then(() => showNotify("🔄 Đã làm mới danh sách"));
 }
 
 // ============================
