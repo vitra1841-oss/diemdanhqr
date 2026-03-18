@@ -10,7 +10,7 @@ let scanning = false;
 let scanLocked = false;
 
 const sheetURL =
-  "https://script.google.com/macros/s/AKfycbxQBIJVhf64r7LoAs2vOi4RxqHucQn_WTkNY_2Ay-80pyBQ2aJzgB0JlMU7gytLajBgSA/exec"; // URL điểm danh
+  "https://script.google.com/macros/s/AKfycbx2d54_vcM78twHlN77F9sERWZ7h-fpeXfpBoOSk5QL9xSU0hV2KKSvmZGTp8VpzHbwBQ/exec"; // URL điểm danh
 const indexURL = 
   "https://script.google.com/macros/s/AKfycbwGX253liSmk3kahAlB5bK12jg92mfB7c8ITpLiZaV1f-vyPcBPNeCLt9hMaeMg9Ru8Xg/exec"; // URL tổng hợp
 
@@ -699,3 +699,8 @@ function restoreAttendance() {
 loadStudentDB().then(() => restoreAttendance());
 updateSessionStatus();
 initTestPanel();
+
+async function getCurrentUser() {
+  const res = await fetch("/api/me");
+  return await res.json();
+}
