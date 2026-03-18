@@ -47,7 +47,7 @@ export default {
 
     // ❌ Sai vị trí
 if (url.pathname === "/login") {
-  return env.ASSETS.fetch(new Request(`${url.origin}/login.html`, request));
+  return env.ASSETS.fetch(`${url.origin}/login.html`);
 }
 
 if (url.pathname === "/") {
