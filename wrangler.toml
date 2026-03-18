@@ -2,11 +2,6 @@ name = "diemdanhqr"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
-[vars]
-APP_URL = "https://xudoanducmevonhiem.id.vn"
-REDIRECT_URI = "https://xudoanducmevonhiem.id.vn/auth/callback"
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzz0OiWaXIC_DNvC2qA0iSGj4z-w0wD39nbr5LSFZPk6_WlDMT1dA8eZAWXZryyMN39iA/exec"
-
 [assets]
 directory = "."
 binding = "ASSETS"
@@ -15,3 +10,8 @@ run_worker_first = true
 [[kv_namespaces]]
 binding = "STUDENT_CACHE"
 id = "bb0a5251321940e7a411220503a76ef8"
+
+[env.preview.vars]
+APP_URL = "https://dev-diemdanhqr.vitra1841.workers.dev"
+REDIRECT_URI = "https://dev-diemdanhqr.vitra1841.workers.dev/auth/callback"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzz0OiWaXIC_DNvC2qA0iSGj4z-w0wD39nbr5LSFZPk6_WlDMT1dA8eZAWXZryyMN39iA/exec"
