@@ -51,7 +51,7 @@ if (url.pathname === "/login") {
 }
 
 if (url.pathname === "/") {
-  return Response.redirect("/login", 302);
+  return Response.redirect(`${url.origin}/login`, 302);
 }
 
     // ✅ Bỏ qua auth check cho các route /auth/*
