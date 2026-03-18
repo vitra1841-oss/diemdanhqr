@@ -149,7 +149,7 @@ if (url.pathname === "/") {
         return new Response(null, {
           status: 302,
           headers: {
-            Location: "/",
+            Location: `${url.origin}/`,
             "Set-Cookie": `session=${sessionValue}; Path=/; HttpOnly; Secure; SameSite=Lax`
           }
         });
@@ -164,7 +164,7 @@ if (url.pathname === "/") {
       // ✅ Tránh redirect loop: chỉ redirect nếu là request HTML
       const accept = request.headers.get("Accept") || "";
           if (accept.includes("text/html")) {
-        return Response.redirect(`${env.APP_URL}/login`, 302);
+        return Response.redirect(`${url.origin}/login`, 302);
       }
       return new Response("Unauthorized", { status: 401 });
     }
