@@ -1,6 +1,4 @@
-const REDIRECT_URI = "https://xudoanducmevonhiem.id.vn/auth/callback";
 const ADMINS = ["vitra1841@gmail.com"];
-const ALLOWED_USERS = ["vitra1841@gmail.com"];
 
 // Ký HMAC để bảo vệ session cookie
 async function signData(data, secret) {
@@ -22,20 +20,29 @@ async function verifySession(cookie, secret) {
     const [payload, sig] = match[1].split(".");
     const expectedSig = await signData(payload, secret);
     if (sig !== expectedSig) return null; // Cookie bị giả mạo!
-    return JSON.parse(atob(payload));
+    return JSON.parse(decodeURIComponent(escape(atob(payload))));
   } catch {
     return null;
   }
 }
 
 async function createSession(data, secret) {
-  const payload = btoa(JSON.stringify(data));
+  const payload = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
   const sig = await signData(payload, secret);
   return `${payload}.${sig}`;
 }
-
+async function getAllowedUsers(appsScriptUrl) {
+  try {
+    const res = await fetch(`${appsScriptUrl}?action=getAllowedUsers`);
+    const data = await res.json();
+    return data.emails;
+  } catch {
+    return []; // Nếu Sheet lỗi → không cho ai vào
+  }
+}
 export default {
   async fetch(request, env) {
+    const REDIRECT_URI = env.REDIRECT_URI;
     const url = new URL(request.url);
 
     // ✅ Bỏ qua auth check cho các route /auth/*
@@ -117,7 +124,8 @@ export default {
         }
 
         // Kiểm tra quyền truy cập
-        if (!ALLOWED_USERS.includes(user.email)) {
+        const allowedUsers = await getAllowedUsers(env.APPS_SCRIPT_URL);
+          if (!allowedUsers.includes(user.email)) {
           return new Response("Bạn không có quyền truy cập", { status: 403 });
         }
 
@@ -146,3 +154,17 @@ export default {
     if (!session) {
       // ✅ Tránh redirect loop: chỉ redirect nếu là request HTML
       const accept = request.headers.get("Accept") || "";
+          if (accept.includes("text/html")) {
+        return Response.redirect(`${env.APP_URL}/auth/login`, 302);
+      }
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    // API trả về thông tin user
+    if (url.pathname === "/api/me") {
+      return Response.json({ email: session.email, name: session.name, role: session.role });
+    }
+
+    return env.ASSETS.fetch(request);
+  }
+}
