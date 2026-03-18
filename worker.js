@@ -46,7 +46,7 @@ export default {
     const url = new URL(request.url);
 
     // ✅ Bỏ qua auth check cho các route /auth/*
-    if (url.pathname.startsWith("/auth/")) {
+    if (url.pathname.startsWith("/auth/") || url.pathname === "/login") {
 
       // Bước 1: Redirect đến Google
       if (url.pathname === "/auth/login") {
@@ -155,7 +155,7 @@ export default {
       // ✅ Tránh redirect loop: chỉ redirect nếu là request HTML
       const accept = request.headers.get("Accept") || "";
           if (accept.includes("text/html")) {
-        return Response.redirect(`${env.APP_URL}/auth/login`, 302);
+        return Response.redirect(`${env.APP_URL}/login`, 302);
       }
       return new Response("Unauthorized", { status: 401 });
     }
