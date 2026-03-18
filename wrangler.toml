@@ -1,0 +1,10 @@
+name = "diemdanhqr"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[assets]
+directory = "."
+
+[[kv_namespaces]]
+binding = "STUDENT_CACHE"
+id = "bb0a5251321940e7a411220503a76ef8"
