@@ -9,9 +9,10 @@ let html5QrCode;
 let scanning = false;
 let scanLocked = false;
 
-// link Google Sheet Web App
 const sheetURL =
-  "https://script.google.com/macros/s/AKfycbxQBIJVhf64r7LoAs2vOi4RxqHucQn_WTkNY_2Ay-80pyBQ2aJzgB0JlMU7gytLajBgSA/exec";
+  "https://script.google.com/macros/s/AKfycbxQBIJVhf64r7LoAs2vOi4RxqHucQn_WTkNY_2Ay-80pyBQ2aJzgB0JlMU7gytLajBgSA/exec"; // URL điểm danh
+const indexURL = 
+  "/api/students"; // URL tổng hợp
 
 // ============================
 // TEST MODE
@@ -191,10 +192,6 @@ function setTestSession(sessionID, clickedBtn) {
 
 let studentDB = {};
 
-const CACHE_KEY = "studentDB_cache";
-const CACHE_TIME_KEY = "studentDB_cache_time";
-const CACHE_DURATION = 24 * 60 * 60 * 1000;
-
 function showLoadingDB(show) {
   const btn = document.getElementById("scanBtn");
   const input = document.getElementById("manualInput");
@@ -211,26 +208,10 @@ function showLoadingDB(show) {
 }
 
 async function loadStudentDB() {
-  try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
-    if (
-      cached &&
-      cachedTime &&
-      Date.now() - parseInt(cachedTime) < CACHE_DURATION
-    ) {
-      studentDB = JSON.parse(cached);
-      console.log("Đã tải:", Object.keys(studentDB).length, "học sinh");
-      return;
-    }
-  } catch (e) {
-    console.log("Cache lỗi, sẽ fetch mới");
-  }
-
   console.log("Đang tải danh sách...");
   showLoadingDB(true);
   try {
-    const res = await fetch(sheetURL + "?type=getAll");
+    const res = await fetch(indexURL);
     const arr = await res.json();
 
     studentDB = {};
@@ -244,22 +225,19 @@ async function loadStudentDB() {
       };
     });
 
-    localStorage.setItem(CACHE_KEY, JSON.stringify(studentDB));
-    localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
     console.log("Đã tải:", Object.keys(studentDB).length, "học sinh");
     showLoadingDB(false);
   } catch (err) {
     console.log("Lỗi tải danh sách:", err);
     showLoadingDB(false);
+    updateSessionStatus();
   }
 }
 
 function refreshDB() {
-  try {
-    localStorage.removeItem(CACHE_KEY);
-    localStorage.removeItem(CACHE_TIME_KEY);
-  } catch (e) {}
-  loadStudentDB().then(() => showNotify("🔄 Đã làm mới danh sách"));
+  fetch("/api/students/refresh", { method: "POST" })
+    .then(() => loadStudentDB())
+    .then(() => showNotify("🔄 Đã làm mới danh sách"));
 }
 
 // ============================
@@ -323,9 +301,17 @@ function onScanSuccess(decodedText) {
   if (now - lastScanTime < 1200) return;
   lastScanTime = now;
 
-  const studentID = decodedText.trim();
+  // Chỉ lấy ID 5 số — bỏ qua mọi thứ còn lại trong QR
+  const match = decodedText.match(/\b\d{5}\b/);
+  if (!match) {
+    showNotify("❌ QR không hợp lệ");
+    return;
+  }
+  const studentID = match[0];
 
-  if (!studentDB[studentID]) {
+  // Tra cứu trong studentDB bằng ID
+  const student = studentDB[studentID];
+  if (!student) {
     showNotify("❌ Không tìm thấy học sinh");
     return;
   }
@@ -340,23 +326,27 @@ function onScanSuccess(decodedText) {
     return;
   }
 
-  const s = studentDB[studentID];
-  const studentName = s.idName;
-  const lop = s.lop || "";
+  // Lấy đầy đủ thông tin từ studentDB
+  const studentName = student.idName;
+  const lop = student.lop || "";
 
+  // Lưu local
   scannedStudents[studentID] = studentName;
   try {
     localStorage.setItem(
       getAttendanceCacheKey(),
-      JSON.stringify(scannedStudents),
+      JSON.stringify(scannedStudents)
     );
   } catch (e) {}
+
+  // Hiển thị lên danh sách UI
   addToList(studentID, studentName);
 
   const cfg = SESSION_CONFIG.find((c) => c.id === session);
   const label = cfg ? cfg.label : session;
   showNotify("✅ Điểm danh ca " + label + " thành công");
 
+  // Gửi lên Apps Script
   fetch(sheetURL, {
     method: "POST",
     body: JSON.stringify({ id: studentID, name: studentName, lop, session }),
