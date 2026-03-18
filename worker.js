@@ -45,8 +45,17 @@ export default {
     const REDIRECT_URI = env.REDIRECT_URI;
     const url = new URL(request.url);
 
+    // ❌ Sai vị trí
+if (url.pathname === "/login") {
+  return env.ASSETS.fetch(new Request(`${url.origin}/login.html`, request));
+}
+
+if (url.pathname === "/") {
+  return Response.redirect("/login", 302);
+}
+
     // ✅ Bỏ qua auth check cho các route /auth/*
-    if (url.pathname.startsWith("/auth/") || url.pathname === "/login") {
+    if (url.pathname.startsWith("/auth/")) {
 
       // Bước 1: Redirect đến Google
       if (url.pathname === "/auth/login") {
