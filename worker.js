@@ -1,4 +1,4 @@
-const INDEX_URL = "https://script.google.com/macros/s/AKfycbw45Eaqlfa_6-VJebTyv7NVut-NjBfCJnox3GELwc8PMt84GSO-FpAnLDIqEGoXDnBPPQ/exec";
+const INDEX_URL = "https://script.google.com/macros/s/AKfycbwGX253liSmk3kahAlB5bK12jg92mfB7c8ITpLiZaV1f-vyPcBPNeCLt9hMaeMg9Ru8Xg/exec";
 
 export default {
   async fetch(request, env) {
