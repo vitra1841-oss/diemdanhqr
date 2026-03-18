@@ -124,7 +124,7 @@ export default {
         }
 
         // Kiểm tra quyền truy cập
-        const allowedUsers = await getAllowedUsers(env.APPS_SCRIPT_URL);
+        const allowedUsers = await getAllowedUsers(env.APPS_SCRIPT_URL_AUTH);
           if (!allowedUsers.includes(user.email)) {
           return new Response("Bạn không có quyền truy cập", { status: 403 });
         }
@@ -163,6 +163,24 @@ export default {
     // API trả về thông tin user
     if (url.pathname === "/api/me") {
       return Response.json({ email: session.email, name: session.name, role: session.role });
+    }
+
+    // API proxy điểm danh → ẩn Apps Script URL
+    if (url.pathname === "/api/checkin") {
+      const body = await request.json();
+      const res = await fetch(env.APPS_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      return Response.json(data);
+    }
+
+    // API proxy danh sách học sinh → ẩn Apps Script URL
+    if (url.pathname === "/api/students") {
+      const res = await fetch(`${env.APPS_SCRIPT_URL_INDEX}?type=getAll`);
+      const data = await res.json();
+      return Response.json(data);
     }
 
     return env.ASSETS.fetch(request);

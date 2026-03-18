@@ -5,7 +5,9 @@ compatibility_date = "2024-01-01"
 [vars]
 APP_URL = "https://xudoanducmevonhiem.id.vn"
 REDIRECT_URI = "https://xudoanducmevonhiem.id.vn/auth/callback"
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzz0OiWaXIC_DNvC2qA0iSGj4z-w0wD39nbr5LSFZPk6_WlDMT1dA8eZAWXZryyMN39iA/exec"
+APPS_SCRIPT_URL= "https://script.google.com/macros/s/AKfycbyXAgaUD3dg9-Ij2ZxrErxIjOU54PYlKt0qaLcFh0Rqww3M2QIASscjgKUFaN2hqqj1kA/exec"
+APPS_SCRIPT_URL_INDEX= "https://script.google.com/macros/s/AKfycbwGX253liSmk3kahAlB5bK12jg92mfB7c8ITpLiZaV1f-vyPcBPNeCLt9hMaeMg9Ru8Xg/exec"
+APPS_SCRIPT_URL_AUTH = "https://script.google.com/macros/s/AKfycbz5XRgCzvGSgFOLSPpf71QfuWht4ndcAfT1rp7abJLMFjFlOHU7dTfEhMMv-LR3h1s8lQ/exec"
 
 [assets]
 directory = "."
@@ -20,3 +22,5 @@ id = "bb0a5251321940e7a411220503a76ef8"
 APP_URL = "https://dev.xudoanducmevonhiem.id.vn"
 REDIRECT_URI = "https://dev.xudoanducmevonhiem.id.vn/auth/callback"
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzz0OiWaXIC_DNvC2qA0iSGj4z-w0wD39nbr5LSFZPk6_WlDMT1dA8eZAWXZryyMN39iA/exec"
+APPS_SCRIPT_URL_INDEX= "https://script.google.com/macros/s/AKfycbwGX253liSmk3kahAlB5bK12jg92mfB7c8ITpLiZaV1f-vyPcBPNeCLt9hMaeMg9Ru8Xg/exec"
+APPS_SCRIPT_URL_AUTH = "https://script.google.com/macros/s/AKfycbz5XRgCzvGSgFOLSPpf71QfuWht4ndcAfT1rp7abJLMFjFlOHU7dTfEhMMv-LR3h1s8lQ/exec"
