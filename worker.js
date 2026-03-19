@@ -240,43 +240,9 @@ async function handleRequest(request, env) {
           }
         });
       }
-      // Developer login
-      if (url.pathname === "/auth/admin-login") {
-        const formData = await request.formData();
-        const username = formData.get("username");
-        const password = formData.get("password");
-
-        if (username !== env.ADMIN_USERNAME || password !== env.ADMIN_PASSWORD) {
-          log("warn", "admin_login_failed", { username });
-          return Response.redirect(`${env.APP_URL}/admin/login?error=1`, 302);
-        }
-
-        log("info", "admin_login_success", { username });
-        const sessionValue = await createSession(
-          { email: username, name: username, role: "developer" },
-          env.SESSION_SECRET
-        );
-        return new Response(null, {
-          status: 302,
-          headers: {
-            Location: `${env.APP_URL}/admin`,
-            "Set-Cookie": `session=${sessionValue}; Path=/; HttpOnly; Secure; SameSite=None`
-          }
-        });
-      }
     }
-    // Trang admin login — không cần session
-    if (url.pathname === "/admin/login") {
-      return env.ASSETS.fetch(new Request(new URL("/admin-login.html", request.url), request));
-    }
-
-    // Trang admin — cần session developer hoặc admin
+    // Trang admin — luôn accessible, auth xử lý phía client
     if (url.pathname === "/admin") {
-      const cookieAdmin = request.headers.get("Cookie") || "";
-      const sessionAdmin = await verifySession(cookieAdmin, env.SESSION_SECRET);
-      if (!sessionAdmin || !["developer", "admin"].includes(sessionAdmin.role)) {
-        return Response.redirect(`${env.APP_URL}/admin/login`, 302);
-      }
       return env.ASSETS.fetch(new Request(new URL("/admin.html", request.url), request));
     }
 
@@ -295,6 +261,22 @@ async function handleRequest(request, env) {
     // Bước 3: Kiểm tra session cho tất cả request còn lại
     const cookie = request.headers.get("Cookie") || "";
     const session = await verifySession(cookie, env.SESSION_SECRET);
+    if (url.pathname === "/api/admin/login" && request.method === "POST") {
+  try {
+    const body = await request.json();
+    if (body.username !== env.ADMIN_USERNAME || body.password !== env.ADMIN_PASSWORD) {
+      log("warn", "admin_login_failed", { username: body.username });
+      return Response.json({ success: false, error: "Sai tài khoản hoặc mật khẩu" }, { status: 401 });
+    }
+    log("info", "admin_login_success", { username: body.username });
+    // Tạo token ký HMAC, hết hạn sau 8 tiếng
+    const payload = JSON.stringify({ role: "developer", exp: Date.now() + 8 * 60 * 60 * 1000 });
+    const token = btoa(payload) + "." + await signData(btoa(payload), env.SESSION_SECRET);
+    return Response.json({ success: true, token });
+  } catch (err) {
+    return Response.json({ success: false, error: "Request không hợp lệ" }, { status: 400 });
+  }
+}
 
     if (!session) {
       // ✅ Tránh redirect loop: chỉ redirect nếu là request HTML
@@ -328,10 +310,23 @@ if (url.pathname === "/api/log-error") {
 
 // ─── Admin API — yêu cầu role developer hoặc admin ───────────────────────
     if (url.pathname.startsWith("/api/admin/")) {
-      if (!["developer", "admin"].includes(session.role)) {
-        return new Response("Forbidden", { status: 403 });
-      }
 
+      const authHeader = request.headers.get("Authorization") || "";
+  const token = authHeader.replace("Bearer ", "");
+
+  let adminRole = null;
+  try {
+    const [payloadB64, sig] = token.split(".");
+    const expectedSig = await signData(payloadB64, env.SESSION_SECRET);
+    if (sig === expectedSig) {
+      const payload = JSON.parse(atob(payloadB64));
+      if (payload.exp > Date.now()) adminRole = payload.role;
+    }
+  } catch {}
+
+  if (!adminRole || !["developer", "admin"].includes(adminRole)) {
+    return new Response("Forbidden", { status: 403 });
+  }
       // GET /api/admin/users — danh sách user
       if (url.pathname === "/api/admin/users" && request.method === "GET") {
         try {
@@ -353,7 +348,7 @@ if (url.pathname === "/api/log-error") {
             body: JSON.stringify({ action: "addUser", email: body.email, role: body.role || "user" }),
           });
           const data = await res.json();
-          log("info", "admin_add_user", { by: session.email, email: body.email, role: body.role });
+          log("info", "admin_add_user", { by: "developer", email: body.email, role: body.role });
           return Response.json(data);
         } catch (err) {
           log("error", "admin_add_user_failed", { message: err.message });
@@ -366,7 +361,7 @@ if (url.pathname === "/api/log-error") {
         try {
           const body = await request.json();
           // Developer mới được xóa admin
-          if (body.role === "admin" && session.role !== "developer") {
+          if (body.role === "admin" && adminRole !== "developer") {
             return Response.json({ success: false, error: "Chỉ developer mới xóa được admin" }, { status: 403 });
           }
           const res = await fetch(env.APPS_SCRIPT_URL_AUTH, {
@@ -374,7 +369,7 @@ if (url.pathname === "/api/log-error") {
             body: JSON.stringify({ action: "removeUser", email: body.email }),
           });
           const data = await res.json();
-          log("info", "admin_remove_user", { by: session.email, email: body.email });
+          log("info", "admin_remove_user", { by: "developer", email: body.email });
           return Response.json(data);
         } catch (err) {
           log("error", "admin_remove_user_failed", { message: err.message });
@@ -387,7 +382,7 @@ if (url.pathname === "/api/log-error") {
         try {
           const body = await request.json();
           // Chỉ developer mới set role admin
-          if (body.role === "admin" && session.role !== "developer") {
+          if (body.role === "admin" && adminRole !== "developer") {
             return Response.json({ success: false, error: "Chỉ developer mới set role admin" }, { status: 403 });
           }
           const res = await fetch(env.APPS_SCRIPT_URL_AUTH, {
@@ -395,7 +390,7 @@ if (url.pathname === "/api/log-error") {
             body: JSON.stringify({ action: "updateRole", email: body.email, role: body.role }),
           });
           const data = await res.json();
-          log("info", "admin_update_role", { by: session.email, email: body.email, role: body.role });
+          log("info", "admin_update_role", { by: "developer", email: body.email, role: body.role });
           return Response.json(data);
         } catch (err) {
           log("error", "admin_update_role_failed", { message: err.message });
