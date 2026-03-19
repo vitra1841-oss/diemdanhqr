@@ -66,7 +66,7 @@ export default {
           headers: {
             Location: googleAuthURL,
             // Lưu state vào cookie để verify sau
-            "Set-Cookie": `oauth_state=${state}; Path=/auth/callback; HttpOnly; Secure; SameSite=Lax; Max-Age=300`
+            "Set-Cookie": `oauth_state=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=300`
           }
         });
       }
