@@ -759,6 +759,7 @@ details.is-open .summary-icon {
   transition: top 0.2s ease;
   z-index: 9998;
   pointer-events: none;
+  backdrop-filter: blur(18px);
 }
 
 .pull-indicator.show {

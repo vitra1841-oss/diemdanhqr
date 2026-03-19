@@ -718,7 +718,7 @@ document.addEventListener("touchmove", (e) => {
   const y = e.touches[0].clientY;
   const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
   const pulled = y - startY;
-  if (scrollTop === 0 && pulled > 40) {
+  if (scrollTop === 0 && pulled > 80) {
     isPulling = true;
     pullIndicator.classList.add("show");
   } else {
