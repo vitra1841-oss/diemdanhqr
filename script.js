@@ -398,7 +398,7 @@ function toggleScanner() {
 
     html5QrCode
       .start(
-        { facingMode: "environment" },
+        { facingMode: { ideal: "environment" } },
         {
           fps: 10,
           qrbox: (w, h) => {
@@ -704,3 +704,25 @@ async function getCurrentUser() {
   const res = await fetch("/api/me");
   return await res.json();
 }
+// Pull to refresh
+let startY = 0;
+let isPulling = false;
+
+document.addEventListener("touchstart", (e) => {
+  startY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener("touchmove", (e) => {
+  const y = e.touches[0].clientY;
+  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+  if (scrollTop === 0 && y - startY > 80) {
+    isPulling = true;
+  }
+}, { passive: true });
+
+document.addEventListener("touchend", () => {
+  if (isPulling) {
+    isPulling = false;
+    window.location.reload();
+  }
+});
