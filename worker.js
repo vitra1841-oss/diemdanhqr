@@ -243,8 +243,18 @@ async function handleRequest(request, env) {
     }
     // Trang admin — luôn accessible, auth xử lý phía client
     if (url.pathname === "/admin" || url.pathname === "/adminpanel") {
-  return env.ASSETS.fetch(new Request(new URL("/adminpanel.html", request.url), request));
+  const assetRes = await env.ASSETS.fetch(
+    new Request(new URL("/adminpanel.html", request.url), request)
+  );
+  // Nếu Assets redirect, follow nội bộ thay vì trả về browser
+  if (assetRes.status >= 300 && assetRes.status < 400) {
+    const loc = assetRes.headers.get("Location");
+    if (loc) {
+      return env.ASSETS.fetch(new Request(new URL(loc, request.url), request));
     }
+  }
+  return assetRes;
+}
 
     if (url.pathname === "/login" || url.pathname === "/login.html") {
       const cookieLogin = request.headers.get("Cookie") || "";
