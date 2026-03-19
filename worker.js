@@ -1,6 +1,46 @@
 const ADMINS = ["vitra1841@gmail.com"];
 
-// Ký HMAC để bảo vệ session cookie
+// ─── Logging helper ───────────────────────────────────────────────────────────
+// Dùng console.error để log có thể xem qua `wrangler tail` hoặc Cloudflare Dashboard
+function log(level, event, details = {}) {
+  const entry = {
+    level,                            // "info" | "warn" | "error"
+    event,                            // tên sự kiện ngắn gọn, dễ grep
+    time: new Date().toISOString(),
+    ...details,
+  };
+  if (level === "error") {
+    console.error(JSON.stringify(entry));
+  } else {
+    console.log(JSON.stringify(entry));
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Gửi thông báo lỗi nghiêm trọng tới Telegram group
+async function notifyTelegram(env, event, details = {}) {
+  try {
+    const time = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+    const lines = [`🚨 *Điểm Danh QR — Lỗi*`, ``, `*event:* \`${event}\``];
+    for (const [k, v] of Object.entries(details)) {
+      if (v !== undefined) lines.push(`*${k}:* \`${v}\``);
+    }
+    lines.push(``, `🕐 ${time}`);
+
+    await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: env.TELEGRAM_CHAT_ID,
+        text: lines.join("\n"),
+        parse_mode: "Markdown",
+      }),
+    });
+  } catch (err) {
+    // Không throw — nếu Telegram lỗi thì log thôi, không ảnh hưởng app
+    log("warn", "telegram_notify_failed", { message: err.message });
+  }
+}
 async function signData(data, secret) {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -31,17 +71,47 @@ async function createSession(data, secret) {
   const sig = await signData(payload, secret);
   return `${payload}.${sig}`;
 }
-async function getAllowedUsers(appsScriptUrl) {
+async function getAllowedUsers(appsScriptUrl, env) {
   try {
     const res = await fetch(`${appsScriptUrl}?action=getAllowedUsers`);
+    if (!res.ok) {
+      log("error", "allowed_users_http_error", { status: res.status, statusText: res.statusText });
+      return [];
+    }
     const data = await res.json();
+    if (!Array.isArray(data.emails)) {
+      log("error", "allowed_users_bad_response", { received: JSON.stringify(data).slice(0, 200) });
+      return [];
+    }
     return data.emails;
-  } catch {
+  } catch (err) {
+    log("error", "allowed_users_fetch_failed", { message: err.message });
+    await notifyTelegram(env, "allowed_users_fetch_failed", { message: err.message });
     return []; // Nếu Sheet lỗi → không cho ai vào
   }
 }
 export default {
   async fetch(request, env) {
+    try {
+      return await handleRequest(request, env);
+    } catch (err) {
+      // Safety net: bắt mọi lỗi không lường trước
+      log("error", "unhandled_exception", {
+        message: err.message,
+        stack: err.stack?.slice(0, 500),
+        url: request.url,
+        method: request.method,
+      });
+      await notifyTelegram(env, "unhandled_exception", {
+        message: err.message,
+        url: request.url,
+      });
+      return new Response("Lỗi hệ thống, vui lòng thử lại", { status: 500 });
+    }
+  }
+}
+
+async function handleRequest(request, env) {
     const REDIRECT_URI = env.REDIRECT_URI;
     const url = new URL(request.url);
 
@@ -94,42 +164,57 @@ export default {
         }
 
         // Đổi code lấy token
-        const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            code,
-            client_id: env.GOOGLE_CLIENT_ID,
-            client_secret: env.GOOGLE_CLIENT_SECRET,
-            redirect_uri: REDIRECT_URI,
-            grant_type: "authorization_code",
-          }),
-        });
-
-        const tokenData = await tokenRes.json();
+        let tokenData;
+        try {
+          const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              code,
+              client_id: env.GOOGLE_CLIENT_ID,
+              client_secret: env.GOOGLE_CLIENT_SECRET,
+              redirect_uri: REDIRECT_URI,
+              grant_type: "authorization_code",
+            }),
+          });
+          tokenData = await tokenRes.json();
+        } catch (err) {
+          log("error", "oauth_token_exchange_failed", { message: err.message });
+          return new Response("Lỗi kết nối Google, vui lòng thử lại", { status: 502 });
+        }
 
         // ✅ Kiểm tra lỗi token
         if (tokenData.error) {
+          log("warn", "oauth_token_error", { error: tokenData.error, description: tokenData.error_description });
           return new Response(`Token error: ${tokenData.error_description}`, { status: 400 });
         }
 
         // Lấy thông tin user
-        const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-          headers: { Authorization: `Bearer ${tokenData.access_token}` },
-        });
-        const user = await userRes.json();
+        let user;
+        try {
+          const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` },
+          });
+          user = await userRes.json();
+        } catch (err) {
+          log("error", "oauth_userinfo_failed", { message: err.message });
+          return new Response("Lỗi lấy thông tin tài khoản Google", { status: 502 });
+        }
 
         if (!user.email) {
+          log("error", "oauth_userinfo_no_email", { received: JSON.stringify(user).slice(0, 200) });
           return new Response("Không lấy được thông tin email", { status: 400 });
         }
 
         // Kiểm tra quyền truy cập
-        const allowedUsers = await getAllowedUsers(env.APPS_SCRIPT_URL_AUTH);
-          if (!allowedUsers.includes(user.email)) {
+        const allowedUsers = await getAllowedUsers(env.APPS_SCRIPT_URL_AUTH, env);
+        if (!allowedUsers.includes(user.email)) {
+          log("warn", "auth_denied", { email: user.email });
           return new Response("Bạn không có quyền truy cập", { status: 403 });
         }
 
         const role = ADMINS.includes(user.email) ? "admin" : "user";
+        log("info", "auth_success", { email: user.email, role });
 
         // ✅ Tạo session có chữ ký HMAC
         const sessionValue = await createSession(
@@ -179,22 +264,75 @@ export default {
 
     // API proxy điểm danh → ẩn Apps Script URL
     if (url.pathname === "/api/checkin") {
-      const body = await request.json();
-      const res = await fetch(env.APPS_SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      return Response.json(data);
+      let body;
+      try {
+        body = await request.json();
+      } catch (err) {
+        log("warn", "checkin_invalid_json", { message: err.message, user: session.email });
+        return Response.json({ success: false, error: "Request không hợp lệ" }, { status: 400 });
+      }
+
+      try {
+        const res = await fetch(env.APPS_SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          log("error", "checkin_apps_script_http_error", {
+            status: res.status,
+            statusText: res.statusText,
+            user: session.email,
+            ca: body?.ca,
+          });
+          return Response.json({ success: false, error: "Lỗi kết nối hệ thống điểm danh" }, { status: 502 });
+        }
+
+        const data = await res.json();
+
+        if (!data.success) {
+          log("warn", "checkin_apps_script_returned_error", {
+            error: data.error,
+            user: session.email,
+            ca: body?.ca,
+            studentId: body?.studentId,
+          });
+        }
+
+        return Response.json(data);
+      } catch (err) {
+        log("error", "checkin_fetch_failed", {
+          message: err.message,
+          user: session.email,
+          ca: body?.ca,
+        });
+        await notifyTelegram(env, "checkin_fetch_failed", {
+          message: err.message,
+          user: session.email,
+          ca: body?.ca,
+        });
+        return Response.json({ success: false, error: "Không thể kết nối tới hệ thống điểm danh" }, { status: 502 });
+      }
     }
 
     // API proxy danh sách học sinh → ẩn Apps Script URL
     if (url.pathname === "/api/students") {
-      const res = await fetch(`${env.APPS_SCRIPT_URL_INDEX}?type=getAll`);
-      const data = await res.json();
-      return Response.json(data);
+      try {
+        const res = await fetch(`${env.APPS_SCRIPT_URL_INDEX}?type=getAll`);
+
+        if (!res.ok) {
+          log("error", "students_apps_script_http_error", { status: res.status, statusText: res.statusText });
+          return Response.json({ success: false, error: "Lỗi lấy danh sách học sinh" }, { status: 502 });
+        }
+
+        const data = await res.json();
+        return Response.json(data);
+      } catch (err) {
+        log("error", "students_fetch_failed", { message: err.message });
+        await notifyTelegram(env, "students_fetch_failed", { message: err.message });
+        return Response.json({ success: false, error: "Không thể kết nối tới hệ thống" }, { status: 502 });
+      }
     }
 
     return env.ASSETS.fetch(request);
   }
-}
