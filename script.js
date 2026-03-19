@@ -15,6 +15,43 @@ const indexURL =
   "/api/students"; // URL tổng hợp
 
 // ============================
+// ERROR LOGGING
+// ============================
+
+// Gửi lỗi JS về Worker để ghi log — không throw nếu thất bại
+function sendLog(event, details = {}) {
+  try {
+    fetch("/api/log-error", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event,
+        time: new Date().toISOString(),
+        url: location.href,
+        ...details,
+      }),
+    }).catch(() => {}); // Không làm gì nếu chính log cũng lỗi
+  } catch (e) {}
+}
+
+// Bắt lỗi JS không xử lý được (undefined variable, syntax error, v.v.)
+window.addEventListener("error", (e) => {
+  sendLog("js_uncaught_error", {
+    message: e.message,
+    filename: e.filename,
+    lineno: e.lineno,
+    colno: e.colno,
+  });
+});
+
+// Bắt Promise bị reject mà không có .catch()
+window.addEventListener("unhandledrejection", (e) => {
+  sendLog("js_unhandled_rejection", {
+    message: e.reason?.message || String(e.reason),
+  });
+});
+
+// ============================
 // TEST MODE
 // ============================
 
@@ -252,6 +289,7 @@ async function loadStudentDB() {
     updateSessionStatus();
   } catch (err) {
     console.log("Lỗi tải danh sách:", err);
+    sendLog("load_student_db_failed", { message: err.message });
     showLoadingDB(false);
     updateSessionStatus();
   }
@@ -375,7 +413,9 @@ function onScanSuccess(decodedText) {
   fetch(sheetURL, {
     method: "POST",
     body: JSON.stringify({ id: studentID, name: studentName, lop, session }),
-  }).catch(() => console.log("Sheet error"));
+  }).catch((err) => {
+    sendLog("checkin_fetch_failed", { message: err.message, studentID, session });
+  });
 }
 
 // ============================
@@ -504,7 +544,9 @@ function manualCheckin() {
   fetch(sheetURL, {
     method: "POST",
     body: JSON.stringify({ id: foundID, name: foundName, lop, session }),
-  }).catch(() => console.log("Sheet error"));
+  }).catch((err) => {
+    sendLog("manual_checkin_fetch_failed", { message: err.message, studentID: foundID, session });
+  });
 }
 
 // ============================
@@ -655,7 +697,9 @@ function deleteAttendance(studentID) {
   fetch(sheetURL, {
     method: "POST",
     body: JSON.stringify({ action: "delete", id: studentID, session }),
-  }).catch(() => console.log("Delete error"));
+  }).catch((err) => {
+    sendLog("delete_fetch_failed", { message: err.message, studentID, session });
+  });
 
   showNotify("🗑️ Đã xóa điểm danh");
 }
