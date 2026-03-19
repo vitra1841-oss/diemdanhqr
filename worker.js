@@ -151,6 +151,11 @@ export default {
         return env.ASSETS.fetch(request);
         }
 
+    const ext = url.pathname.split(".").pop();
+    if (["css", "js", "png", "jpg", "ico", "svg", "webp"].includes(ext)) {
+      return env.ASSETS.fetch(request);
+    }
+
     // Bước 3: Kiểm tra session cho tất cả request còn lại
     const cookie = request.headers.get("Cookie") || "";
     const session = await verifySession(cookie, env.SESSION_SECRET);
