@@ -242,8 +242,8 @@ async function handleRequest(request, env) {
       }
     }
     // Trang admin — luôn accessible, auth xử lý phía client
-    if (url.pathname === "/admin") {
-      return env.ASSETS.fetch(new Request(new URL("/adminpanel.html", request.url), request));
+    if (url.pathname === "/admin" || url.pathname === "/adminpanel") {
+  return env.ASSETS.fetch(new Request(new URL("/adminpanel.html", request.url), request));
     }
 
     if (url.pathname === "/login" || url.pathname === "/login.html") {
