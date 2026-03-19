@@ -20,6 +20,7 @@
     <meta name="theme-color" content="#1f1d16">
   </head>
   <body>
+    <div id="pullIndicator" class="pull-indicator">↓ Kéo để tải lại</div>
     <div class="title">
       <span class="title-sub">Xứ Đoàn Đức Mẹ Vô Nhiễm</span>
       <span class="title-main">Điểm Danh QR</span>
@@ -85,23 +86,31 @@
   // Pull to refresh
 let startY = 0;
 let isPulling = false;
+const pullIndicator = document.getElementById("pullIndicator");
 
 document.addEventListener("touchstart", (e) => {
   startY = e.touches[0].clientY;
+  isPulling = false;
 }, { passive: true });
 
 document.addEventListener("touchmove", (e) => {
   const y = e.touches[0].clientY;
   const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-  if (scrollTop === 0 && y - startY > 80) {
+  const pulled = y - startY;
+  if (scrollTop === 0 && pulled > 40) {
     isPulling = true;
+    pullIndicator.classList.add("show");
+  } else {
+    isPulling = false;
+    pullIndicator.classList.remove("show");
   }
 }, { passive: true });
 
 document.addEventListener("touchend", () => {
+  pullIndicator.classList.remove("show");
   if (isPulling) {
     isPulling = false;
-    window.location.reload();
+    setTimeout(() => window.location.reload(), 200);
   }
 });
 </script>

@@ -22,7 +22,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
 }
 
 .title {
@@ -742,4 +742,25 @@ details.is-open .summary-icon {
 
 .toggle-pwd:active {
   transform: translateY(-50%) scale(0.9);
+}
+
+/* ---------- PULL TO REFRESH ---------- */
+.pull-indicator {
+  position: fixed;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 212, 0, 0.15);
+  color: #ffd400;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: top 0.2s ease;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+.pull-indicator.show {
+  top: 16px;
 }

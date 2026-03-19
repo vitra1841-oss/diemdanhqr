@@ -398,7 +398,7 @@ function toggleScanner() {
 
     html5QrCode
       .start(
-        { facingMode: { ideal: "environment" } },
+        { facingMode: "environment" } ,
         {
           fps: 10,
           qrbox: (w, h) => {
@@ -413,7 +413,7 @@ function toggleScanner() {
         document.getElementById("scanBtnText").textContent = "Tắt Camera";
         document.querySelector(".scan-frame").style.display = "block";
       })
-      .catch(() => {
+      .catch((err) => {
         scanning = false;
         document.getElementById("scanBtnText").textContent = "Bật Camera";
         document.querySelector(".scan-frame").style.display = "none";
@@ -421,7 +421,7 @@ function toggleScanner() {
           html5QrCode.clear();
           html5QrCode = null;
         }
-        showNotify("❌ Không thể truy cập camera");
+        showNotify("❌ " + (err?.message || "Không thể truy cập camera"));
       });
   } else {
     html5QrCode
@@ -707,22 +707,30 @@ async function getCurrentUser() {
 // Pull to refresh
 let startY = 0;
 let isPulling = false;
+const pullIndicator = document.getElementById("pullIndicator");
 
 document.addEventListener("touchstart", (e) => {
   startY = e.touches[0].clientY;
+  isPulling = false;
 }, { passive: true });
 
 document.addEventListener("touchmove", (e) => {
   const y = e.touches[0].clientY;
   const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-  if (scrollTop === 0 && y - startY > 80) {
+  const pulled = y - startY;
+  if (scrollTop === 0 && pulled > 40) {
     isPulling = true;
+    pullIndicator.classList.add("show");
+  } else {
+    isPulling = false;
+    pullIndicator.classList.remove("show");
   }
 }, { passive: true });
 
 document.addEventListener("touchend", () => {
+  pullIndicator.classList.remove("show");
   if (isPulling) {
     isPulling = false;
-    window.location.reload();
+    setTimeout(() => window.location.reload(), 200);
   }
 });
