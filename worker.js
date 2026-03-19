@@ -154,8 +154,8 @@ export default {
       return env.ASSETS.fetch(request);
     }
 
-    const ext = url.pathname.split(".").pop();
-    if (["css", "js", "png", "jpg", "ico", "svg", "webp"].includes(ext)) {
+    const ext = url.pathname.includes(".") ? url.pathname.split(".").pop().toLowerCase() : "";
+    if (["css", "js", "png", "jpg", "jpeg", "ico", "svg", "webp", "gif"].includes(ext)) {
       return env.ASSETS.fetch(request);
     }
 
