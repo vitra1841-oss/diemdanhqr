@@ -148,8 +148,11 @@ export default {
     }
 
     if (url.pathname === "/login" || url.pathname === "/login.html") {
-        return env.ASSETS.fetch(request);
-        }
+      const cookieLogin = request.headers.get("Cookie") || "";
+      const sessionLogin = await verifySession(cookieLogin, env.SESSION_SECRET);
+      if (sessionLogin) return Response.redirect(`${env.APP_URL}/`, 302);
+      return env.ASSETS.fetch(request);
+    }
 
     const ext = url.pathname.split(".").pop();
     if (["css", "js", "png", "jpg", "ico", "svg", "webp"].includes(ext)) {
