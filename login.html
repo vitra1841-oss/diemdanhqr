@@ -13,7 +13,7 @@
       rel="stylesheet"
     />
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Điểm Danh QR">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Điểm Danh QR">
@@ -28,18 +28,6 @@
 
     <div class="login-box">
       <h2 class="login-title">ĐĂNG NHẬP</h2>
-        <br>
-      <div class="input-group">
-        <input type="text" id="username" placeholder=" " autocomplete="off" />
-        <label for="username">Tên đăng nhập</label>
-      </div>
-
-      <div class="input-group">
-        <input type="password" id="password" placeholder=" " />
-        <label for="password">Mật khẩu</label>
-      </div>
-
-      <button class="start-btn login-btn">Đăng nhập</button>
 
       <button class="google-btn" onclick="window.location.href='/auth/login'">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -51,9 +39,49 @@
         Đăng nhập với Google
       </button>
 
-      <div class="forgot-pwd">
-        <a href="#">Quên mật khẩu</a>
+      <div class="divider">
+        <span>Hoặc đăng nhập bằng</span>
       </div>
+
+      <div class="input-group">
+        <input type="text" id="username" placeholder=" " autocomplete="off" />
+        <label for="username">Tên đăng nhập</label>
+      </div>
+
+      <div class="input-group">
+        <input type="password" id="password" placeholder=" " />
+        <label for="password">Mật khẩu</label>
+        <button type="button" class="toggle-pwd" onclick="togglePassword()">
+          <svg id="eyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+
+      <button class="start-btn login-btn">Đăng nhập</button>
+      <a class="forgot-pwd-inline">Quên mật khẩu?</a>
+
     </div>
+    <script>
+  function togglePassword() {
+    const input = document.getElementById("password");
+    const icon = document.getElementById("eyeIcon");
+    if (input.type === "password") {
+      input.type = "text";
+      icon.innerHTML = `
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
+      `;
+    } else {
+      input.type = "password";
+      icon.innerHTML = `
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      `;
+    }
+  }
+</script>
   </body>
 </html>

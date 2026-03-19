@@ -271,10 +271,11 @@ summary::marker {
   display: block;
   flex-shrink: 0;
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: rotate(180deg);
 }
 
 details.is-open .summary-icon {
-  transform: rotate(180deg);
+  transform: rotate(0deg);
 }
 
 #suggestions {
@@ -567,7 +568,7 @@ details.is-open .summary-icon {
 .login-title {
   font-size: 24px;
   color: #ffffff;
-  margin: 0 0 5px 0;
+  margin: 0 0 20px 0;
   font-weight: 700;
   text-align: left;
 }
@@ -606,18 +607,26 @@ details.is-open .summary-icon {
 /* Tạo hiệu ứng chữ đè lên viền */
 .input-group label {
   position: absolute;
-  top: -8px;
-  left: 14px;
-  background-color: #24221b; /* Trùng với màu nền login-box để che viền */
+  top: 14px;
+  left: 16px;
+  background-color: transparent;
   padding: 0 6px;
-  font-size: 12px;
-  color: #a3a3a4;
+  font-size: 16px;
+  color: #5a5a5c;
   pointer-events: none;
-  transition: color 0.3s;
+  transition: top 0.25s ease, font-size 0.25s ease, color 0.25s ease, background-color 0.25s ease;
 }
 
-.input-group input:focus + label {
+.input-group input:focus + label,
+.input-group input:not(:placeholder-shown) + label {
+  top: -8px;
+  font-size: 12px;
   color: #ffd400;
+  background-color: #24221b;
+}
+
+.input-group input:not(:focus):not(:placeholder-shown) + label {
+  color: #a3a3a4;
 }
 
 /* Điều chỉnh lại nút Đăng nhập */
@@ -676,4 +685,60 @@ details.is-open .summary-icon {
   margin-bottom: 5px;  /* Khoảng cách từ logo xuống khung Đăng Nhập */
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)); /* Thêm chút bóng đổ cho logo nổi bật trên nền tối */
   animation: fadeIn 0.6s ease-out; /* Hiệu ứng hiện mượt mà cùng khung đăng nhập */
+}
+
+/* ---------- DIVIDER ---------- */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0;
+  color: #525255;
+  font-size: 12px;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #525255;
+}
+
+/* ---------- FORGOT PASSWORD INLINE ---------- */
+.forgot-pwd-inline {
+  display: block;
+  text-align: right;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 13px;
+  transition: text-decoration 0.2s;
+}
+
+.forgot-pwd-inline:hover {
+  text-decoration: underline;
+}
+
+/* ---------- TOGGLE PASSWORD ---------- */
+.toggle-pwd {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #5a5a5c;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.toggle-pwd:hover {
+  color: #ffffff;
+}
+
+.toggle-pwd:active {
+  transform: translateY(-50%) scale(0.9);
 }
