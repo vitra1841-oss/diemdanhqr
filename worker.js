@@ -45,15 +45,6 @@ export default {
     const REDIRECT_URI = env.REDIRECT_URI;
     const url = new URL(request.url);
 
-    // ❌ Sai vị trí
-if (url.pathname === "/login") {
-  return env.ASSETS.fetch(`${url.origin}/login.html`);
-}
-
-if (url.pathname === "/") {
-  return Response.redirect(`${url.origin}/login`, 302);
-}
-
     // ✅ Bỏ qua auth check cho các route /auth/*
     if (url.pathname.startsWith("/auth/")) {
 
@@ -155,6 +146,10 @@ if (url.pathname === "/") {
         });
       }
     }
+
+    if (url.pathname === "/login" || url.pathname === "/login.html") {
+        return env.ASSETS.fetch(request);
+        }
 
     // Bước 3: Kiểm tra session cho tất cả request còn lại
     const cookie = request.headers.get("Cookie") || "";
