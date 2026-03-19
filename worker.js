@@ -1,5 +1,3 @@
-const ADMINS = ["vitra1841@gmail.com"];
-
 // ─── Logging helper ───────────────────────────────────────────────────────────
 // Dùng console.error để log có thể xem qua `wrangler tail` hoặc Cloudflare Dashboard
 function log(level, event, details = {}) {
@@ -88,6 +86,15 @@ async function getAllowedUsers(appsScriptUrl, env) {
     log("error", "allowed_users_fetch_failed", { message: err.message });
     await notifyTelegram(env, "allowed_users_fetch_failed", { message: err.message });
     return []; // Nếu Sheet lỗi → không cho ai vào
+  }
+}
+async function getUsers(appsScriptUrl) {
+  try {
+    const res = await fetch(`${appsScriptUrl}?action=getUsers`);
+    const data = await res.json();
+    return Array.isArray(data.users) ? data.users : [];
+  } catch {
+    return [];
   }
 }
 export default {
@@ -213,7 +220,10 @@ async function handleRequest(request, env) {
           return new Response("Bạn không có quyền truy cập", { status: 403 });
         }
 
-        const role = ADMINS.includes(user.email) ? "admin" : "user";
+        // Lấy role từ Sheet thay vì hardcode
+        const allUsers = await getUsers(env.APPS_SCRIPT_URL_AUTH);
+        const userRecord = allUsers.find(u => u.email === user.email);
+        const role = userRecord?.role || "user";
         log("info", "auth_success", { email: user.email, role });
 
         // ✅ Tạo session có chữ ký HMAC
@@ -230,6 +240,44 @@ async function handleRequest(request, env) {
           }
         });
       }
+      // Developer login
+      if (url.pathname === "/auth/admin-login") {
+        const formData = await request.formData();
+        const username = formData.get("username");
+        const password = formData.get("password");
+
+        if (username !== env.ADMIN_USERNAME || password !== env.ADMIN_PASSWORD) {
+          log("warn", "admin_login_failed", { username });
+          return Response.redirect(`${env.APP_URL}/admin/login?error=1`, 302);
+        }
+
+        log("info", "admin_login_success", { username });
+        const sessionValue = await createSession(
+          { email: username, name: username, role: "developer" },
+          env.SESSION_SECRET
+        );
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: `${env.APP_URL}/admin`,
+            "Set-Cookie": `session=${sessionValue}; Path=/; HttpOnly; Secure; SameSite=None`
+          }
+        });
+      }
+    }
+    // Trang admin login — không cần session
+    if (url.pathname === "/admin/login") {
+      return env.ASSETS.fetch(new Request(new URL("/admin-login.html", request.url), request));
+    }
+
+    // Trang admin — cần session developer hoặc admin
+    if (url.pathname === "/admin") {
+      const cookieAdmin = request.headers.get("Cookie") || "";
+      const sessionAdmin = await verifySession(cookieAdmin, env.SESSION_SECRET);
+      if (!sessionAdmin || !["developer", "admin"].includes(sessionAdmin.role)) {
+        return Response.redirect(`${env.APP_URL}/admin/login`, 302);
+      }
+      return env.ASSETS.fetch(new Request(new URL("/admin.html", request.url), request));
     }
 
     if (url.pathname === "/login" || url.pathname === "/login.html") {
@@ -278,6 +326,87 @@ if (url.pathname === "/api/log-error") {
   return new Response(null, { status: 204 });
 }
 
+// ─── Admin API — yêu cầu role developer hoặc admin ───────────────────────
+    if (url.pathname.startsWith("/api/admin/")) {
+      if (!["developer", "admin"].includes(session.role)) {
+        return new Response("Forbidden", { status: 403 });
+      }
+
+      // GET /api/admin/users — danh sách user
+      if (url.pathname === "/api/admin/users" && request.method === "GET") {
+        try {
+          const res = await fetch(`${env.APPS_SCRIPT_URL_AUTH}?action=getUsers`);
+          const data = await res.json();
+          return Response.json(data);
+        } catch (err) {
+          log("error", "admin_get_users_failed", { message: err.message });
+          return Response.json({ success: false, error: "Không thể tải danh sách" }, { status: 502 });
+        }
+      }
+
+      // POST /api/admin/users — thêm user
+      if (url.pathname === "/api/admin/users" && request.method === "POST") {
+        try {
+          const body = await request.json();
+          const res = await fetch(env.APPS_SCRIPT_URL_AUTH, {
+            method: "POST",
+            body: JSON.stringify({ action: "addUser", email: body.email, role: body.role || "user" }),
+          });
+          const data = await res.json();
+          log("info", "admin_add_user", { by: session.email, email: body.email, role: body.role });
+          return Response.json(data);
+        } catch (err) {
+          log("error", "admin_add_user_failed", { message: err.message });
+          return Response.json({ success: false, error: "Không thể thêm user" }, { status: 502 });
+        }
+      }
+
+      // DELETE /api/admin/users — xóa user
+      if (url.pathname === "/api/admin/users" && request.method === "DELETE") {
+        try {
+          const body = await request.json();
+          // Developer mới được xóa admin
+          if (body.role === "admin" && session.role !== "developer") {
+            return Response.json({ success: false, error: "Chỉ developer mới xóa được admin" }, { status: 403 });
+          }
+          const res = await fetch(env.APPS_SCRIPT_URL_AUTH, {
+            method: "POST",
+            body: JSON.stringify({ action: "removeUser", email: body.email }),
+          });
+          const data = await res.json();
+          log("info", "admin_remove_user", { by: session.email, email: body.email });
+          return Response.json(data);
+        } catch (err) {
+          log("error", "admin_remove_user_failed", { message: err.message });
+          return Response.json({ success: false, error: "Không thể xóa user" }, { status: 502 });
+        }
+      }
+
+      // PATCH /api/admin/users — đổi role
+      if (url.pathname === "/api/admin/users" && request.method === "PATCH") {
+        try {
+          const body = await request.json();
+          // Chỉ developer mới set role admin
+          if (body.role === "admin" && session.role !== "developer") {
+            return Response.json({ success: false, error: "Chỉ developer mới set role admin" }, { status: 403 });
+          }
+          const res = await fetch(env.APPS_SCRIPT_URL_AUTH, {
+            method: "POST",
+            body: JSON.stringify({ action: "updateRole", email: body.email, role: body.role }),
+          });
+          const data = await res.json();
+          log("info", "admin_update_role", { by: session.email, email: body.email, role: body.role });
+          return Response.json(data);
+        } catch (err) {
+          log("error", "admin_update_role_failed", { message: err.message });
+          return Response.json({ success: false, error: "Không thể đổi role" }, { status: 502 });
+        }
+      }
+
+      return new Response("Not found", { status: 404 });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     // API trả về thông tin user
     if (url.pathname === "/api/me") {
       return Response.json({ email: session.email, name: session.name, role: session.role });
@@ -303,10 +432,10 @@ if (url.pathname === "/api/log-error") {
     time <= s.endH * 60 + s.endM
   );
 
-  if (!validSession) {
-    log("warn", "checkin_outside_hours", { user: session.email });
-    return Response.json({ success: false, error: "Ngoài giờ điểm danh" }, { status: 403 });
-  }
+  if (!validSession && !["admin", "developer"].includes(session.role)) {
+  log("warn", "checkin_outside_hours", { user: session.email });
+  return Response.json({ success: false, error: "Ngoài giờ điểm danh" }, { status: 403 });
+}
 
       try {
         const res = await fetch(env.APPS_SCRIPT_URL, {

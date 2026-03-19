@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Developer Login - Điểm Danh QR</title>
+    <link rel="icon" type="image/png" href="TNTT.png" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .dev-badge {
+        display: inline-block;
+        background: #2a2a2a;
+        border: 1px solid #444;
+        color: #aaa;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        letter-spacing: 1px;
+      }
+      .error-msg {
+        color: #ff6b6b;
+        font-size: 13px;
+        margin-top: -8px;
+        margin-bottom: 12px;
+        display: none;
+      }
+      .error-msg.show { display: block; }
+    </style>
+  </head>
+  <body>
+    <div class="title">
+      <span class="title-sub">Xứ Đoàn Đức Mẹ Vô Nhiễm</span>
+      <span class="title-main">Điểm Danh QR</span>
+      <img src="TNTT.png" alt="Logo TNTT" class="logo-login" />
+    </div>
+
+    <div class="login-box">
+      <span class="dev-badge">DEVELOPER</span>
+      <h2 class="login-title">QUẢN TRỊ</h2>
+
+      <p id="errorMsg" class="error-msg">Sai tên đăng nhập hoặc mật khẩu</p>
+
+      <form method="POST" action="/auth/admin-login">
+        <div class="input-group">
+          <input type="text" id="username" name="username" placeholder=" " autocomplete="off" required />
+          <label for="username">Tên đăng nhập</label>
+        </div>
+
+        <div class="input-group">
+          <input type="password" id="password" name="password" placeholder=" " required />
+          <label for="password">Mật khẩu</label>
+          <button type="button" class="toggle-pwd" onclick="togglePassword()">
+            <svg id="eyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+
+        <button type="submit" class="start-btn login-btn">Đăng nhập</button>
+      </form>
+    </div>
+
+    <script>
+      // Hiển thị lỗi nếu có ?error=1
+      if (new URLSearchParams(location.search).get("error")) {
+        document.getElementById("errorMsg").classList.add("show");
+      }
+
+      function togglePassword() {
+        const input = document.getElementById("password");
+        const icon = document.getElementById("eyeIcon");
+        if (input.type === "password") {
+          input.type = "text";
+          icon.innerHTML = `
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+          `;
+        } else {
+          input.type = "password";
+          icon.innerHTML = `
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          `;
+        }
+      }
+    </script>
+  </body>
+</html>
