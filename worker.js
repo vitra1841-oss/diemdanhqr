@@ -69,30 +69,21 @@ async function createSession(data, secret) {
   const sig = await signData(payload, secret);
   return `${payload}.${sig}`;
 }
-async function getAllowedUsers(appsScriptUrl, env) {
+async function getAllowedUsers(env) {
   try {
-    const res = await fetch(`${appsScriptUrl}?action=getAllowedUsers`);
-    if (!res.ok) {
-      log("error", "allowed_users_http_error", { status: res.status, statusText: res.statusText });
-      return [];
-    }
-    const data = await res.json();
-    if (!Array.isArray(data.emails)) {
-      log("error", "allowed_users_bad_response", { received: JSON.stringify(data).slice(0, 200) });
-      return [];
-    }
-    return data.emails;
+    const result = await env.DB.prepare("SELECT email FROM allowed_users").all();
+    return result.results.map(r => r.email);
   } catch (err) {
     log("error", "allowed_users_fetch_failed", { message: err.message });
     await notifyTelegram(env, "allowed_users_fetch_failed", { message: err.message });
-    return []; // Nếu Sheet lỗi → không cho ai vào
+    return [];
   }
 }
-async function getUsers(appsScriptUrl) {
+
+async function getUsers(env) {
   try {
-    const res = await fetch(`${appsScriptUrl}?action=getUsers`);
-    const data = await res.json();
-    return Array.isArray(data.users) ? data.users : [];
+    const result = await env.DB.prepare("SELECT email, role FROM allowed_users").all();
+    return result.results;
   } catch {
     return [];
   }
@@ -214,14 +205,14 @@ async function handleRequest(request, env) {
         }
 
         // Kiểm tra quyền truy cập
-        const allowedUsers = await getAllowedUsers(env.APPS_SCRIPT_URL_AUTH, env);
+        const allowedUsers = await getAllowedUsers(env);
         if (!allowedUsers.includes(user.email)) {
           log("warn", "auth_denied", { email: user.email });
           return new Response("Bạn không có quyền truy cập", { status: 403 });
         }
 
         // Lấy role từ Sheet thay vì hardcode
-        const allUsers = await getUsers(env.APPS_SCRIPT_URL_AUTH);
+        const allUsers = await getUsers(env);
         const userRecord = allUsers.find(u => u.email === user.email);
         const role = userRecord?.role || "user";
         log("info", "auth_success", { email: user.email, role });
@@ -309,9 +300,8 @@ async function handleRequest(request, env) {
       // GET /api/admin/users — danh sách user
       if (url.pathname === "/api/admin/users" && request.method === "GET") {
         try {
-          const res = await fetch(`${env.APPS_SCRIPT_URL_AUTH}?action=getUsers`);
-          const data = await res.json();
-          return Response.json(data);
+          const result = await env.DB.prepare("SELECT email, role FROM allowed_users").all();
+          return Response.json({ users: result.results });
         } catch (err) {
           log("error", "admin_get_users_failed", { message: err.message });
           return Response.json({ success: false, error: "Không thể tải danh sách" }, { status: 502 });
@@ -322,13 +312,11 @@ async function handleRequest(request, env) {
       if (url.pathname === "/api/admin/users" && request.method === "POST") {
         try {
           const body = await request.json();
-          const res = await fetch(env.APPS_SCRIPT_URL_AUTH, {
-            method: "POST",
-            body: JSON.stringify({ action: "addUser", email: body.email, role: body.role || "user" }),
-          });
-          const data = await res.json();
+          const existing = await env.DB.prepare("SELECT email FROM allowed_users WHERE email = ?").bind(body.email).first();
+          if (existing) return Response.json({ success: false, error: "Email đã tồn tại" });
+          await env.DB.prepare("INSERT INTO allowed_users (email, role) VALUES (?, ?)").bind(body.email, body.role || "user").run();
           log("info", "admin_add_user", { by: "developer", email: body.email, role: body.role });
-          return Response.json(data);
+          return Response.json({ success: true });
         } catch (err) {
           log("error", "admin_add_user_failed", { message: err.message });
           return Response.json({ success: false, error: "Không thể thêm user" }, { status: 502 });
@@ -343,13 +331,9 @@ async function handleRequest(request, env) {
           if (body.role === "admin" && adminRole !== "developer") {
             return Response.json({ success: false, error: "Chỉ developer mới xóa được admin" }, { status: 403 });
           }
-          const res = await fetch(env.APPS_SCRIPT_URL_AUTH, {
-            method: "POST",
-            body: JSON.stringify({ action: "removeUser", email: body.email }),
-          });
-          const data = await res.json();
+          await env.DB.prepare("DELETE FROM allowed_users WHERE email = ?").bind(body.email).run();
           log("info", "admin_remove_user", { by: "developer", email: body.email });
-          return Response.json(data);
+          return Response.json({ success: true });
         } catch (err) {
           log("error", "admin_remove_user_failed", { message: err.message });
           return Response.json({ success: false, error: "Không thể xóa user" }, { status: 502 });
@@ -364,13 +348,9 @@ async function handleRequest(request, env) {
           if (body.role === "admin" && adminRole !== "developer") {
             return Response.json({ success: false, error: "Chỉ developer mới set role admin" }, { status: 403 });
           }
-          const res = await fetch(env.APPS_SCRIPT_URL_AUTH, {
-            method: "POST",
-            body: JSON.stringify({ action: "updateRole", email: body.email, role: body.role }),
-          });
-          const data = await res.json();
+          await env.DB.prepare("UPDATE allowed_users SET role = ? WHERE email = ?").bind(body.role, body.email).run();
           log("info", "admin_update_role", { by: "developer", email: body.email, role: body.role });
-          return Response.json(data);
+          return Response.json({ success: true });
         } catch (err) {
           log("error", "admin_update_role_failed", { message: err.message });
           return Response.json({ success: false, error: "Không thể đổi role" }, { status: 502 });

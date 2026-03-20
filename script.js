@@ -193,6 +193,7 @@ setInterval(updateSessionStatus, 60 * 1000);
 
 function initTestPanel() {
   if (!TEST_MODE_ENABLED) return;
+  if (!currentUser || !["admin", "developer"].includes(currentUser.role)) return;
   const panel = document.getElementById("testPanel");
   if (!panel) return;
   panel.style.display = "block";
@@ -740,10 +741,17 @@ function restoreAttendance() {
 // KHỞI ĐỘNG
 // ============================
 
-fetch("/api/me").then(r => r.json()).then(data => { currentUser = data; }).catch(() => {});
+fetch("/api/me")
+  .then(r => r.json())
+  .then(data => {
+    currentUser = data;
+    initTestPanel();
+  })
+  .catch(() => {
+    initTestPanel();
+  });
 loadStudentDB().then(() => restoreAttendance());
 updateSessionStatus();
-initTestPanel();
 
 // Pull to refresh
 let startY = 0;

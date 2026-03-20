@@ -7,20 +7,19 @@ APP_URL = "https://xudoanducmevonhiem.id.vn"
 REDIRECT_URI = "https://xudoanducmevonhiem.id.vn/auth/callback"
 APPS_SCRIPT_URL= "https://script.google.com/macros/s/AKfycbwa5jLbOhj2F7oHjBeLNDYpzObC8TGbHbgJ51pf8RLqIqCmxovGgCv_IYcYcCjuG7Mf4A/exec"
 APPS_SCRIPT_URL_INDEX= "https://script.google.com/macros/s/AKfycbwGX253liSmk3kahAlB5bK12jg92mfB7c8ITpLiZaV1f-vyPcBPNeCLt9hMaeMg9Ru8Xg/exec"
-APPS_SCRIPT_URL_AUTH = "https://script.google.com/macros/s/AKfycbz5XRgCzvGSgFOLSPpf71QfuWht4ndcAfT1rp7abJLMFjFlOHU7dTfEhMMv-LR3h1s8lQ/exec"
 
 [assets]
 directory = "."
 binding = "ASSETS"
 run_worker_first = true
 
-[[kv_namespaces]]
-binding = "STUDENT_CACHE"
-id = "bb0a5251321940e7a411220503a76ef8"
-
 [env.preview.vars]
 APP_URL = "https://dev.xudoanducmevonhiem.id.vn"
 REDIRECT_URI = "https://dev.xudoanducmevonhiem.id.vn/auth/callback"
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa5jLbOhj2F7oHjBeLNDYpzObC8TGbHbgJ51pf8RLqIqCmxovGgCv_IYcYcCjuG7Mf4A/exec"
 APPS_SCRIPT_URL_INDEX= "https://script.google.com/macros/s/AKfycbwGX253liSmk3kahAlB5bK12jg92mfB7c8ITpLiZaV1f-vyPcBPNeCLt9hMaeMg9Ru8Xg/exec"
-APPS_SCRIPT_URL_AUTH = "https://script.google.com/macros/s/AKfycbz5XRgCzvGSgFOLSPpf71QfuWht4ndcAfT1rp7abJLMFjFlOHU7dTfEhMMv-LR3h1s8lQ/exec"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "diemdanhqr-db"
+database_id = "b9f439ae-5e08-44b9-b1ce-1d78f4dde1c2"
