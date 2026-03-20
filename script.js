@@ -4,7 +4,7 @@
 
 let scannedStudents = {};
 let lastScanTime = 0;
-
+let currentUser = null;
 let html5QrCode;
 let scanning = false;
 let scanLocked = false;
@@ -412,7 +412,7 @@ function onScanSuccess(decodedText) {
   // Gửi lên Apps Script
   fetch(sheetURL, {
     method: "POST",
-    body: JSON.stringify({ id: studentID, name: studentName, lop, session }),
+    body: JSON.stringify({ id: studentID, name: studentName, lop, session, scannedBy: currentUser?.email ?? "unknown" }),
   }).catch((err) => {
     sendLog("checkin_fetch_failed", { message: err.message, studentID, session });
   });
@@ -543,7 +543,7 @@ function manualCheckin() {
   const lop = studentDB[foundID]?.lop || "";
   fetch(sheetURL, {
     method: "POST",
-    body: JSON.stringify({ id: foundID, name: foundName, lop, session }),
+    body: JSON.stringify({ id: foundID, name: foundName, lop, session, scannedBy: currentUser?.email ?? "unknown" }),
   }).catch((err) => {
     sendLog("manual_checkin_fetch_failed", { message: err.message, studentID: foundID, session });
   });
@@ -696,7 +696,7 @@ function deleteAttendance(studentID) {
   const session = getCurrentSession();
   fetch(sheetURL, {
     method: "POST",
-    body: JSON.stringify({ action: "delete", id: studentID, session }),
+    body: JSON.stringify({ action: "delete", id: studentID, session, scannedBy: currentUser?.email ?? "unknown" }),
   }).catch((err) => {
     sendLog("delete_fetch_failed", { message: err.message, studentID, session });
   });
@@ -740,14 +740,11 @@ function restoreAttendance() {
 // KHỞI ĐỘNG
 // ============================
 
+fetch("/api/me").then(r => r.json()).then(data => { currentUser = data; }).catch(() => {});
 loadStudentDB().then(() => restoreAttendance());
 updateSessionStatus();
 initTestPanel();
 
-async function getCurrentUser() {
-  const res = await fetch("/api/me");
-  return await res.json();
-}
 // Pull to refresh
 let startY = 0;
 let isPulling = false;
