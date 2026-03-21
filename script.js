@@ -11,7 +11,7 @@ let scanLocked = false;
 
 const sheetURL =
   "/api/checkin"; // URL điểm danh
-const indexURL = 
+const indexURL =
   "/api/students"; // URL tổng hợp
 
 // ============================
@@ -30,8 +30,8 @@ function sendLog(event, details = {}) {
         url: location.href,
         ...details,
       }),
-    }).catch(() => {}); // Không làm gì nếu chính log cũng lỗi
-  } catch (e) {}
+    }).catch(() => { }); // Không làm gì nếu chính log cũng lỗi
+  } catch (e) { }
 }
 
 // Bắt lỗi JS không xử lý được (undefined variable, syntax error, v.v.)
@@ -167,7 +167,7 @@ function updateSessionStatus() {
   } else {
     // Dừng camera nếu đang chạy
     if (scanning && html5QrCode) {
-      html5QrCode.stop().catch(() => {});
+      html5QrCode.stop().catch(() => { });
       scanning = false;
       document.getElementById("scanBtnText").textContent = "Bật Camera";
       document.querySelector(".scan-frame").style.display = "none";
@@ -300,7 +300,7 @@ function refreshDB() {
   try {
     localStorage.removeItem(CACHE_KEY);
     localStorage.removeItem(CACHE_TIME_KEY);
-  } catch (e) {}
+  } catch (e) { }
   loadStudentDB().then(() => showNotify("🔄 Đã làm mới danh sách"));
 }
 
@@ -401,7 +401,7 @@ function onScanSuccess(decodedText) {
       getAttendanceCacheKey(),
       JSON.stringify(scannedStudents)
     );
-  } catch (e) {}
+  } catch (e) { }
 
   // Hiển thị lên danh sách UI
   addToList(studentID, studentName);
@@ -439,7 +439,7 @@ function toggleScanner() {
 
     html5QrCode
       .start(
-        { facingMode: "environment" } ,
+        { facingMode: "environment" },
         {
           fps: 10,
           qrbox: (w, h) => {
@@ -534,7 +534,7 @@ function manualCheckin() {
       getAttendanceCacheKey(),
       JSON.stringify(scannedStudents),
     );
-  } catch (e) {}
+  } catch (e) { }
   addToList(foundID, foundName);
 
   const cfg = SESSION_CONFIG.find((c) => c.id === session);
@@ -677,7 +677,7 @@ function deleteAttendance(studentID) {
       getAttendanceCacheKey(),
       JSON.stringify(scannedStudents),
     );
-  } catch (e) {}
+  } catch (e) { }
 
   const tr = document.querySelector(
     "#scanTableBody tr[data-id='" + studentID + "']",
@@ -734,7 +734,7 @@ function restoreAttendance() {
         addToList(id, data[id]);
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 }
 
 // ============================

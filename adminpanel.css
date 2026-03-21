@@ -1,7 +1,19 @@
 /* ─── Reset ──────────────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
-* { appearance: none; -webkit-appearance: none; -webkit-tap-highlight-color: transparent; }
-html { -webkit-text-size-adjust: 100%; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
 
 /* ─── Body ───────────────────────────────────────────────────────────────── */
 body {
@@ -17,8 +29,13 @@ body {
   overscroll-behavior-y: auto;
 }
 
-button { touch-action: manipulation; }
-button:active { opacity: 0.8; }
+button {
+  touch-action: manipulation;
+}
+
+button:active {
+  opacity: 0.8;
+}
 
 /* ─── Login screen ───────────────────────────────────────────────────────── */
 #loginScreen {
@@ -68,7 +85,9 @@ button:active { opacity: 0.8; }
   transition: border-color 0.2s;
 }
 
-.input-group input:focus { border-color: #444; }
+.input-group input:focus {
+  border-color: #444;
+}
 
 .input-group label {
   position: absolute;
@@ -82,8 +101,8 @@ button:active { opacity: 0.8; }
   padding: 0 4px;
 }
 
-.input-group input:focus + label,
-.input-group input:not(:placeholder-shown) + label {
+.input-group input:focus+label,
+.input-group input:not(:placeholder-shown)+label {
   top: -8px;
   font-size: 11px;
   color: #666;
@@ -104,8 +123,14 @@ button:active { opacity: 0.8; }
   align-items: center;
   transition: color 0.2s;
 }
-.toggle-pwd:hover { color: #888; }
-.toggle-pwd:active { transform: translateY(-50%); }
+
+.toggle-pwd:hover {
+  color: #888;
+}
+
+.toggle-pwd:active {
+  transform: translateY(-50%);
+}
 
 .start-btn {
   width: 100%;
@@ -121,7 +146,10 @@ button:active { opacity: 0.8; }
   letter-spacing: 0.04em;
   transition: background 0.2s;
 }
-.start-btn:hover { background: #fff; }
+
+.start-btn:hover {
+  background: #fff;
+}
 
 .login-btn {
   margin-top: 8px;
@@ -147,7 +175,10 @@ button:active { opacity: 0.8; }
   margin-bottom: 24px;
 }
 
-.header h1 { font-size: 20px; font-weight: 600; }
+.header h1 {
+  font-size: 20px;
+  font-weight: 600;
+}
 
 .header-left {
   display: flex;
@@ -162,8 +193,18 @@ button:active { opacity: 0.8; }
   letter-spacing: 1px;
   font-weight: 600;
 }
-.role-badge.developer { background: #2d1f4e; color: #b07fff; border: 1px solid #6a3fbb; }
-.role-badge.admin     { background: #1f3a2d; color: #4ade80; border: 1px solid #2d6a4a; }
+
+.role-badge.developer {
+  background: #2d1f4e;
+  color: #b07fff;
+  border: 1px solid #6a3fbb;
+}
+
+.role-badge.admin {
+  background: #1f3a2d;
+  color: #4ade80;
+  border: 1px solid #2d6a4a;
+}
 
 .logout-btn {
   background: none;
@@ -175,7 +216,11 @@ button:active { opacity: 0.8; }
   font-size: 13px;
   transition: border-color 0.2s, color 0.2s;
 }
-.logout-btn:hover { border-color: #666; color: #ddd; }
+
+.logout-btn:hover {
+  border-color: #666;
+  color: #ddd;
+}
 
 .card {
   background: #242424;
@@ -212,8 +257,14 @@ button:active { opacity: 0.8; }
   outline: none;
   transition: border-color 0.2s;
 }
-.add-form input:focus { border-color: #666; }
-.add-form input::placeholder { color: #555; }
+
+.add-form input:focus {
+  border-color: #666;
+}
+
+.add-form input::placeholder {
+  color: #555;
+}
 
 .add-form select {
   background: #1a1a1a;
@@ -237,14 +288,37 @@ button:active { opacity: 0.8; }
   cursor: pointer;
   transition: opacity 0.15s;
 }
-.btn:hover    { opacity: 0.85; }
-.btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.btn:active   { transform: scale(0.96); filter: none; }
 
-.btn-primary { background: #4f46e5; color: white; }
-.btn-danger  { background: #dc2626; color: white; padding: 6px 12px; font-size: 13px; }
+.btn:hover {
+  opacity: 0.85;
+}
 
-.user-table { width: 100%; border-collapse: collapse; }
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn:active {
+  transform: scale(0.96);
+  filter: none;
+}
+
+.btn-primary {
+  background: #4f46e5;
+  color: white;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+}
 
 .user-table th {
   text-align: left;
@@ -262,7 +336,9 @@ button:active { opacity: 0.8; }
   font-size: 14px;
 }
 
-.user-table tr:last-child td { border-bottom: none; }
+.user-table tr:last-child td {
+  border-bottom: none;
+}
 
 .role-select {
   background: #1a1a1a;
@@ -283,9 +359,21 @@ button:active { opacity: 0.8; }
   font-size: 12px;
   font-weight: 500;
 }
-.tag.admin     { background: #1f3a2d; color: #4ade80; }
-.tag.user      { background: #1f2937; color: #93c5fd; }
-.tag.developer { background: #2d1f4e; color: #b07fff; }
+
+.tag.admin {
+  background: #1f3a2d;
+  color: #4ade80;
+}
+
+.tag.user {
+  background: #1f2937;
+  color: #93c5fd;
+}
+
+.tag.developer {
+  background: #2d1f4e;
+  color: #b07fff;
+}
 
 /* ─── Notify toast ───────────────────────────────────────────────────────── */
 .notify {
@@ -303,7 +391,19 @@ button:active { opacity: 0.8; }
   white-space: nowrap;
   pointer-events: none;
 }
-.notify.show { transform: translateX(-50%) translateY(0); }
 
-.loading { color: #666; font-size: 14px; padding: 12px 0; }
-.empty   { color: #555; font-size: 14px; padding: 12px 0; }
+.notify.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+.loading {
+  color: #666;
+  font-size: 14px;
+  padding: 12px 0;
+}
+
+.empty {
+  color: #555;
+  font-size: 14px;
+  padding: 12px 0;
+}

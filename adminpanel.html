@@ -1,280 +1,283 @@
 <!doctype html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quản trị - Điểm Danh QR</title>
-    <link rel="icon" type="image/png" href="TNTT.png" />
-    
-    <link rel="stylesheet" href="adminpanel.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@200..900&display=swap" rel="stylesheet" />
-    <meta name="theme-color" content="#1f1d16">
-  </head>
-  <body>
 
-    <!-- ─── Màn hình đăng nhập ─── -->
-    <div id="loginScreen"> 
-      <div class="login-box">
-        <h2 class="login-title">QUẢN TRỊ</h2>
-        <p id="errorMsg" style="color:#ff6b6b;font-size:13px;margin:-8px 0 16px 0;text-align:left;display:none;">
-          Sai tên đăng nhập hoặc mật khẩu
-        </p>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản trị - Điểm Danh QR</title>
+  <link rel="icon" type="image/png" href="TNTT.png" />
 
-        <div class="input-group">
-          <input type="text" id="username" placeholder=" " autocomplete="off" />
-          <label for="username">Tên đăng nhập</label>
-        </div>
+  <link rel="stylesheet" href="adminpanel.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@200..900&display=swap" rel="stylesheet" />
+  <meta name="theme-color" content="#1f1d16">
+</head>
 
-        <div class="input-group">
-          <input type="password" id="password" placeholder=" " />
-          <label for="password">Mật khẩu</label>
-          <button type="button" class="toggle-pwd" onclick="togglePassword()">
-            <svg id="eyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-          </button>
-        </div>
+<body>
 
-        <button class="start-btn login-btn" onclick="doLogin()">Đăng nhập</button>
+  <!-- ─── Màn hình đăng nhập ─── -->
+  <div id="loginScreen">
+    <div class="login-box">
+      <h2 class="login-title">QUẢN TRỊ</h2>
+      <p id="errorMsg" style="color:#ff6b6b;font-size:13px;margin:-8px 0 16px 0;text-align:left;display:none;">
+        Sai tên đăng nhập hoặc mật khẩu
+      </p>
+
+      <div class="input-group">
+        <input type="text" id="username" placeholder=" " autocomplete="off" />
+        <label for="username">Tên đăng nhập</label>
+      </div>
+
+      <div class="input-group">
+        <input type="password" id="password" placeholder=" " />
+        <label for="password">Mật khẩu</label>
+        <button type="button" class="toggle-pwd" onclick="togglePassword()">
+          <svg id="eyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+      </div>
+
+      <button class="start-btn login-btn" onclick="doLogin()">Đăng nhập</button>
+    </div>
+  </div>
+
+  <!-- ─── Màn hình quản trị ─── -->
+  <div id="adminScreen" style="display:none; padding: 24px 16px;">
+    <div class="header">
+      <div class="header-left">
+        <h1>Quản trị</h1>
+        <span class="role-badge developer">DEVELOPER</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Đăng xuất</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Thêm người dùng</div>
+      <div class="add-form">
+        <input type="email" id="newEmail" placeholder="email@gmail.com" />
+        <select id="newRole">
+          <option value="user">user</option>
+          <option value="admin">admin</option>
+        </select>
+        <button class="btn btn-primary" onclick="addUser()">Thêm</button>
       </div>
     </div>
 
-    <!-- ─── Màn hình quản trị ─── -->
-    <div id="adminScreen" style="display:none; padding: 24px 16px;">
-      <div class="header">
-        <div class="header-left">
-          <h1>Quản trị</h1>
-          <span class="role-badge developer">DEVELOPER</span>
-        </div>
-        <button class="logout-btn" onclick="doLogout()">Đăng xuất</button>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Thêm người dùng</div>
-        <div class="add-form">
-          <input type="email" id="newEmail" placeholder="email@gmail.com" />
-          <select id="newRole">
-            <option value="user">user</option>
-            <option value="admin">admin</option>
-          </select>
-          <button class="btn btn-primary" onclick="addUser()">Thêm</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Danh sách người dùng</div>
-        <div id="tableWrap">
-          <div class="loading">Đang tải...</div>
-        </div>
+    <div class="card">
+      <div class="card-title">Danh sách người dùng</div>
+      <div id="tableWrap">
+        <div class="loading">Đang tải...</div>
       </div>
     </div>
+  </div>
 
-    <div class="notify" id="notify"></div>
+  <div class="notify" id="notify"></div>
 
-    <script>
-      let adminToken = null;
+  <script>
+    let adminToken = null;
 
-      // ─── Login ───────────────────────────────────────────────────────────────
+    // ─── Login ───────────────────────────────────────────────────────────────
 
-      document.getElementById("password").addEventListener("keydown", e => {
-        if (e.key === "Enter") doLogin();
-      });
+    document.getElementById("password").addEventListener("keydown", e => {
+      if (e.key === "Enter") doLogin();
+    });
 
-      document.getElementById("username").addEventListener("keydown", e => {
-        if (e.key === "Enter") doLogin();
-      });
+    document.getElementById("username").addEventListener("keydown", e => {
+      if (e.key === "Enter") doLogin();
+    });
 
-      async function doLogin() {
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value;
-        const errorMsg = document.getElementById("errorMsg");
-        errorMsg.style.display = "none";
+    async function doLogin() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      const errorMsg = document.getElementById("errorMsg");
+      errorMsg.style.display = "none";
 
-        if (!username || !password) {
-          errorMsg.textContent = "Vui lòng nhập đầy đủ thông tin";
+      if (!username || !password) {
+        errorMsg.textContent = "Vui lòng nhập đầy đủ thông tin";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          errorMsg.textContent = data.error || "Sai tài khoản hoặc mật khẩu";
           errorMsg.style.display = "block";
           return;
         }
 
-        try {
-          const res = await fetch("/api/admin/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password }),
-          });
-          const data = await res.json();
+        // Lưu token vào sessionStorage — đóng tab là mất
+        adminToken = data.token;
+        sessionStorage.setItem("adminToken", adminToken);
 
-          if (!data.success) {
-            errorMsg.textContent = data.error || "Sai tài khoản hoặc mật khẩu";
-            errorMsg.style.display = "block";
-            return;
-          }
-
-          // Lưu token vào sessionStorage — đóng tab là mất
-          adminToken = data.token;
-          sessionStorage.setItem("adminToken", adminToken);
-
-          showAdminScreen();
-        } catch {
-          errorMsg.textContent = "Lỗi kết nối, thử lại";
-          errorMsg.style.display = "block";
-        }
+        showAdminScreen();
+      } catch {
+        errorMsg.textContent = "Lỗi kết nối, thử lại";
+        errorMsg.style.display = "block";
       }
+    }
 
-      function doLogout() {
-        sessionStorage.removeItem("adminToken");
-        adminToken = null;
-        document.getElementById("username").value = "";
-        document.getElementById("password").value = "";
-        document.getElementById("adminScreen").style.display = "none";
-        document.getElementById("loginScreen").style.display = "block";
-      }
+    function doLogout() {
+      sessionStorage.removeItem("adminToken");
+      adminToken = null;
+      document.getElementById("username").value = "";
+      document.getElementById("password").value = "";
+      document.getElementById("adminScreen").style.display = "none";
+      document.getElementById("loginScreen").style.display = "block";
+    }
 
-      function showAdminScreen() {
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("adminScreen").style.display = "block";
-        loadUsers();
-      }
+    function showAdminScreen() {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("adminScreen").style.display = "block";
+      loadUsers();
+    }
 
-      function togglePassword() {
-        const input = document.getElementById("password");
-        const icon = document.getElementById("eyeIcon");
-        if (input.type === "password") {
-          input.type = "text";
-          icon.innerHTML = `
+    function togglePassword() {
+      const input = document.getElementById("password");
+      const icon = document.getElementById("eyeIcon");
+      if (input.type === "password") {
+        input.type = "text";
+        icon.innerHTML = `
             <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
             <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
             <line x1="1" y1="1" x2="23" y2="23"/>
           `;
-        } else {
-          input.type = "password";
-          icon.innerHTML = `
+      } else {
+        input.type = "password";
+        icon.innerHTML = `
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
             <circle cx="12" cy="12" r="3"/>
           `;
+      }
+    }
+
+    // ─── Admin API helpers ────────────────────────────────────────────────────
+
+    function authFetch(url, options = {}) {
+      return fetch(url, {
+        ...options,
+        headers: {
+          ...(options.headers || {}),
+          "Authorization": "Bearer " + adminToken,
+        },
+      });
+    }
+
+    // ─── Users ────────────────────────────────────────────────────────────────
+
+    async function loadUsers() {
+      const wrap = document.getElementById("tableWrap");
+      wrap.innerHTML = '<div class="loading">Đang tải...</div>';
+      try {
+        const res = await authFetch("/api/admin/users");
+        if (res.status === 403) { doLogout(); return; }
+        const data = await res.json();
+
+        if (!data.users || data.users.length === 0) {
+          wrap.innerHTML = '<div class="empty">Chưa có người dùng nào</div>';
+          return;
         }
-      }
 
-      // ─── Admin API helpers ────────────────────────────────────────────────────
-
-      function authFetch(url, options = {}) {
-        return fetch(url, {
-          ...options,
-          headers: {
-            ...(options.headers || {}),
-            "Authorization": "Bearer " + adminToken,
-          },
-        });
-      }
-
-      // ─── Users ────────────────────────────────────────────────────────────────
-
-      async function loadUsers() {
-        const wrap = document.getElementById("tableWrap");
-        wrap.innerHTML = '<div class="loading">Đang tải...</div>';
-        try {
-          const res = await authFetch("/api/admin/users");
-          if (res.status === 403) { doLogout(); return; }
-          const data = await res.json();
-
-          if (!data.users || data.users.length === 0) {
-            wrap.innerHTML = '<div class="empty">Chưa có người dùng nào</div>';
-            return;
-          }
-
-          const rows = data.users.map(u => {
-            const roleCell = `
+        const rows = data.users.map(u => {
+          const roleCell = `
               <select class="role-select" onchange="updateRole('${u.email}', this.value, this)">
-                <option value="user"  ${u.role === "user"  ? "selected" : ""}>user</option>
+                <option value="user"  ${u.role === "user" ? "selected" : ""}>user</option>
                 <option value="admin" ${u.role === "admin" ? "selected" : ""}>admin</option>
               </select>`;
 
-            const delBtn = `<button class="btn btn-danger" onclick="removeUser('${u.email}', '${u.role}', this)">Xóa</button>`;
+          const delBtn = `<button class="btn btn-danger" onclick="removeUser('${u.email}', '${u.role}', this)">Xóa</button>`;
 
-            return `<tr>
+          return `<tr>
               <td>${u.email}</td>
               <td>${roleCell}</td>
               <td>${delBtn}</td>
             </tr>`;
-          }).join("");
+        }).join("");
 
-          wrap.innerHTML = `
+        wrap.innerHTML = `
             <table class="user-table">
               <thead><tr>
                 <th>Email</th><th>Role</th><th></th>
               </tr></thead>
               <tbody>${rows}</tbody>
             </table>`;
-        } catch {
-          wrap.innerHTML = '<div class="empty">Lỗi tải danh sách</div>';
-        }
+      } catch {
+        wrap.innerHTML = '<div class="empty">Lỗi tải danh sách</div>';
       }
+    }
 
-      async function addUser() {
-        const email = document.getElementById("newEmail").value.trim();
-        const role  = document.getElementById("newRole").value;
-        if (!email) { showNotify("⚠️ Nhập email trước"); return; }
+    async function addUser() {
+      const email = document.getElementById("newEmail").value.trim();
+      const role = document.getElementById("newRole").value;
+      if (!email) { showNotify("⚠️ Nhập email trước"); return; }
 
-        const res = await authFetch("/api/admin/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, role }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          document.getElementById("newEmail").value = "";
-          showNotify("✅ Đã thêm " + email);
-          loadUsers();
-        } else {
-          showNotify("❌ " + (data.error || "Lỗi không xác định"));
-        }
+      const res = await authFetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById("newEmail").value = "";
+        showNotify("✅ Đã thêm " + email);
+        loadUsers();
+      } else {
+        showNotify("❌ " + (data.error || "Lỗi không xác định"));
       }
+    }
 
-      async function removeUser(email, role, btn) {
-        if (!confirm("Xóa " + email + "?")) return;
-        btn.disabled = true;
+    async function removeUser(email, role, btn) {
+      if (!confirm("Xóa " + email + "?")) return;
+      btn.disabled = true;
 
-        const res = await authFetch("/api/admin/users", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, role }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          showNotify("🗑️ Đã xóa " + email);
-          loadUsers();
-        } else {
-          showNotify("❌ " + (data.error || "Lỗi không xác định"));
-          btn.disabled = false;
-        }
+      const res = await authFetch("/api/admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotify("🗑️ Đã xóa " + email);
+        loadUsers();
+      } else {
+        showNotify("❌ " + (data.error || "Lỗi không xác định"));
+        btn.disabled = false;
       }
+    }
 
-      async function updateRole(email, role, select) {
-        select.disabled = true;
-        const res = await authFetch("/api/admin/users", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, role }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          showNotify("✅ Đổi role " + email + " → " + role);
-        } else {
-          showNotify("❌ " + (data.error || "Lỗi không xác định"));
-        }
-        select.disabled = false;
+    async function updateRole(email, role, select) {
+      select.disabled = true;
+      const res = await authFetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotify("✅ Đổi role " + email + " → " + role);
+      } else {
+        showNotify("❌ " + (data.error || "Lỗi không xác định"));
       }
+      select.disabled = false;
+    }
 
-      function showNotify(msg) {
-        const el = document.getElementById("notify");
-        el.textContent = msg;
-        el.classList.add("show");
-        setTimeout(() => el.classList.remove("show"), 2500);
-      }
-    </script>
-  </body>
+    function showNotify(msg) {
+      const el = document.getElementById("notify");
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 2500);
+    }
+  </script>
+</body>
+
 </html>

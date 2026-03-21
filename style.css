@@ -3,6 +3,7 @@
 *::after {
   box-sizing: border-box;
 }
+
 * {
   appearance: none;
   -webkit-appearance: none;
@@ -163,6 +164,7 @@ details {
 button {
   touch-action: manipulation;
 }
+
 button:active {
   transform: scale(0.96);
   filter: brightness(0.85);
@@ -243,6 +245,7 @@ p {
   font-family: inherit;
   color: var(--placeholder-color);
 }
+
 .inputWrap input::-webkit-input-placeholder {
   font-family: inherit;
   color: var(--placeholder-color);
@@ -256,7 +259,7 @@ p {
   display: block;
 }
 
-.inputWrap input:not(:placeholder-shown) + .confirmIcon {
+.inputWrap input:not(:placeholder-shown)+.confirmIcon {
   background: #1a1a1a;
   transform: scale(1.05);
 }
@@ -264,6 +267,7 @@ p {
 summary::-webkit-details-marker {
   display: none;
 }
+
 summary::marker {
   display: none;
 }
@@ -306,6 +310,7 @@ details.is-open .summary-icon {
 #suggestions li:last-child {
   border-bottom: none;
 }
+
 #suggestions li:active {
   background: rgba(255, 255, 255, 0.1);
 }
@@ -340,12 +345,14 @@ details.is-open .summary-icon {
   width: 55px;
   white-space: nowrap;
 }
+
 .col-lop {
   width: 50px;
   white-space: nowrap;
   text-align: right;
   color: #aaa;
 }
+
 .col-del {
   width: 32px;
   text-align: center;
@@ -376,6 +383,7 @@ details.is-open .summary-icon {
 #scanTable thead th:first-child {
   border-radius: 8px 0 0 8px;
 }
+
 #scanTable thead th:last-child {
   border-radius: 0 8px 8px 0;
 }
@@ -384,6 +392,7 @@ details.is-open .summary-icon {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -402,6 +411,7 @@ details.is-open .summary-icon {
 .scanBtn-loading.show {
   display: inline-flex;
 }
+
 .scanBtn-text.hide {
   display: none;
 }
@@ -425,6 +435,7 @@ details.is-open .summary-icon {
   line-height: 1.6;
   text-align: center;
 }
+
 .off-hour-banner small {
   display: block;
   font-weight: 400;
@@ -445,6 +456,7 @@ details.is-open .summary-icon {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   min-width: 175px;
 }
+
 .test-panel-title {
   font-size: 0.7rem;
   font-weight: 700;
@@ -453,11 +465,13 @@ details.is-open .summary-icon {
   margin-bottom: 8px;
   text-transform: uppercase;
 }
+
 .test-session-btns {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
+
 .test-btn {
   padding: 5px 10px;
   border-radius: 6px;
@@ -469,96 +483,104 @@ details.is-open .summary-icon {
   cursor: pointer;
   transition: all 0.15s;
 }
+
 .test-btn:hover {
   background: #3d3d6a;
 }
+
 .test-btn.active {
   background: #7c3aed;
   border-color: #7c3aed;
   color: #fff;
 }
+
 .test-btn-real {
   color: #f87171;
   border-color: #6b3030;
 }
+
 .test-btn-real.active {
   background: #991b1b;
   border-color: #991b1b;
   color: #fff;
 }
-      .welcome-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 85vh;
-        width: 90%;
-        max-width: 400px;
-        margin: 0 auto;
-        animation: fadeIn 0.8s ease-out;
-      }
 
-      .logo-large {
-        width: 120px;
-        margin-bottom: 10px;
-        filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
-      }
+.welcome-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 85vh;
+  width: 90%;
+  max-width: 400px;
+  margin: 0 auto;
+  animation: fadeIn 0.8s ease-out;
+}
 
-      .title-main-large {
-        font-size: 32px; 
-        font-weight: 700;
-        letter-spacing: 0.02em;
-        color: white;
-        text-align: center;
-      }
+.logo-large {
+  width: 120px;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
+}
 
-      .welcome-text {
-        color: #8e8e8f;
-        font-size: 15px;
-        margin: 15px 0 40px 0;
-        line-height: 1.5;
-        text-align: center;
-      }
+.title-main-large {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: white;
+  text-align: center;
+}
 
-      .start-btn {
-        width: 100%;
-        padding: 16px 25px;
-        font-size: 18px;
-        font-weight: bold;
-        cursor: pointer;
-        border-radius: 30px;
-        background: #ffd400;
-        color: #141414;
-        border: none;
-        box-shadow: 0 4px 15px rgba(255, 212, 0, 0.2);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        font-family: inherit;
-      }
+.welcome-text {
+  color: #8e8e8f;
+  font-size: 15px;
+  margin: 15px 0 40px 0;
+  line-height: 1.5;
+  text-align: center;
+}
 
-      .start-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(255, 212, 0, 0.4);
-      }
+.start-btn {
+  width: 100%;
+  padding: 16px 25px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 30px;
+  background: #ffd400;
+  color: #141414;
+  border: none;
+  box-shadow: 0 4px 15px rgba(255, 212, 0, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-family: inherit;
+}
 
-      .start-btn:active {
-        transform: scale(0.96);
-      }
+.start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 212, 0, 0.4);
+}
 
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      /* ---------- KHUNG ĐĂNG NHẬP ---------- */
+.start-btn:active {
+  transform: scale(0.96);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- KHUNG ĐĂNG NHẬP ---------- */
 .login-box {
   width: 90%;
   max-width: 400px;
-  background-color: #24221b; /* Màu nền hơi sáng hơn body một chút để tạo khối nổi */
+  background-color: #24221b;
+  /* Màu nền hơi sáng hơn body một chút để tạo khối nổi */
   border-radius: 20px;
   padding: 30px 20px 20px 20px;
   margin-top: 10px;
@@ -593,7 +615,8 @@ details.is-open .summary-icon {
   padding: 14px 16px;
   background: transparent;
   border: 1px solid #5a5a5c;
-  border-radius: 12px; /* Bo góc tròn nhẹ */
+  border-radius: 12px;
+  /* Bo góc tròn nhẹ */
   color: white;
   font-size: 16px;
   font-family: inherit;
@@ -602,7 +625,8 @@ details.is-open .summary-icon {
 }
 
 .input-group input:focus {
-  border-color: #ffd400; /* Viền sáng màu vàng khi bấm vào */
+  border-color: #ffd400;
+  /* Viền sáng màu vàng khi bấm vào */
 }
 
 /* Tạo hiệu ứng chữ đè lên viền */
@@ -618,15 +642,15 @@ details.is-open .summary-icon {
   transition: top 0.25s ease, font-size 0.25s ease, color 0.25s ease, background-color 0.25s ease;
 }
 
-.input-group input:focus + label,
-.input-group input:not(:placeholder-shown) + label {
+.input-group input:focus+label,
+.input-group input:not(:placeholder-shown)+label {
   top: -8px;
   font-size: 12px;
   color: #ffd400;
   background-color: #24221b;
 }
 
-.input-group input:not(:focus):not(:placeholder-shown) + label {
+.input-group input:not(:focus):not(:placeholder-shown)+label {
   color: #a3a3a4;
 }
 
@@ -634,7 +658,8 @@ details.is-open .summary-icon {
 .login-btn {
   margin: 5px 0 20px 0;
   width: 100%;
-  border-radius: 12px; /* Chỉnh cho bo góc vuông vắn hơn, giống ô input */
+  border-radius: 12px;
+  /* Chỉnh cho bo góc vuông vắn hơn, giống ô input */
   padding: 14px;
 }
 
@@ -680,12 +705,13 @@ details.is-open .summary-icon {
 .forgot-pwd a:hover {
   color: #ffffff;
 }
+
 .logo-login {
-  width: 90px; /* Bạn có thể tăng giảm số này để chỉnh độ to nhỏ của logo */
-  margin-top: 15px;    /* Khoảng cách từ chữ Điểm Danh QR xuống logo */
-  margin-bottom: 5px;  /* Khoảng cách từ logo xuống khung Đăng Nhập */
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)); /* Thêm chút bóng đổ cho logo nổi bật trên nền tối */
-  animation: fadeIn 0.6s ease-out; /* Hiệu ứng hiện mượt mà cùng khung đăng nhập */
+  width: 90px;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+  animation: fadeIn 0.6s ease-out;
 }
 
 /* ---------- DIVIDER ---------- */
@@ -742,6 +768,13 @@ details.is-open .summary-icon {
 
 .toggle-pwd:active {
   transform: translateY(-50%) scale(0.9);
+}
+
+.login-error-banner {
+  color: #ff6b6b;
+  font-size: 13px;
+  margin-bottom: 16px;
+  text-align: left;
 }
 
 /* ---------- PULL TO REFRESH ---------- */
