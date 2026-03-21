@@ -178,12 +178,14 @@ async function handleRequest(request, env) {
         tokenData = await tokenRes.json();
       } catch (err) {
         log("error", "oauth_token_exchange_failed", { message: err.message });
+        await notifyTelegram(env, "oauth_token_exchange_failed", { message: err.message });
         return new Response("Lỗi kết nối Google, vui lòng thử lại", { status: 502 });
       }
 
       // ✅ Kiểm tra lỗi token
       if (tokenData.error) {
         log("warn", "oauth_token_error", { error: tokenData.error, description: tokenData.error_description });
+        await notifyTelegram(env, "oauth_token_error", { error: tokenData.error, description: tokenData.error_description });
         return new Response(`Token error: ${tokenData.error_description}`, { status: 400 });
       }
 
@@ -196,6 +198,7 @@ async function handleRequest(request, env) {
         user = await userRes.json();
       } catch (err) {
         log("error", "oauth_userinfo_failed", { message: err.message });
+        await notifyTelegram(env, "oauth_userinfo_failed", { message: err.message });
         return new Response("Lỗi lấy thông tin tài khoản Google", { status: 502 });
       }
 
@@ -227,7 +230,7 @@ async function handleRequest(request, env) {
         status: 302,
         headers: {
           Location: `${env.APP_URL}/`,
-          "Set-Cookie": `session=${sessionValue}; Path=/; HttpOnly; Secure; SameSite=None`
+          "Set-Cookie": `session=${sessionValue}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=31536000`
         }
       });
     }
@@ -300,10 +303,11 @@ async function handleRequest(request, env) {
     // GET /api/admin/users — danh sách user
     if (url.pathname === "/api/admin/users" && request.method === "GET") {
       try {
-        const result = await env.DB.prepare("SELECT email, role FROM allowed_users").all();
+        const result = await env.DB.prepare("SELECT email, role, name FROM allowed_users").all();
         return Response.json({ users: result.results });
       } catch (err) {
         log("error", "admin_get_users_failed", { message: err.message });
+        await notifyTelegram(env, "admin_get_users_failed", { message: err.message });
         return Response.json({ success: false, error: "Không thể tải danh sách" }, { status: 502 });
       }
     }
@@ -314,11 +318,12 @@ async function handleRequest(request, env) {
         const body = await request.json();
         const existing = await env.DB.prepare("SELECT email FROM allowed_users WHERE email = ?").bind(body.email).first();
         if (existing) return Response.json({ success: false, error: "Email đã tồn tại" });
-        await env.DB.prepare("INSERT INTO allowed_users (email, role) VALUES (?, ?)").bind(body.email, body.role || "user").run();
+        await env.DB.prepare("INSERT INTO allowed_users (email, role, name) VALUES (?, ?, ?)").bind(body.email, body.role || "user", body.name || null).run();
         log("info", "admin_add_user", { by: "developer", email: body.email, role: body.role });
         return Response.json({ success: true });
       } catch (err) {
         log("error", "admin_add_user_failed", { message: err.message });
+        await notifyTelegram(env, "admin_add_user_failed", { message: err.message });
         return Response.json({ success: false, error: "Không thể thêm user" }, { status: 502 });
       }
     }
@@ -336,6 +341,7 @@ async function handleRequest(request, env) {
         return Response.json({ success: true });
       } catch (err) {
         log("error", "admin_remove_user_failed", { message: err.message });
+        await notifyTelegram(env, "admin_remove_user_failed", { message: err.message });
         return Response.json({ success: false, error: "Không thể xóa user" }, { status: 502 });
       }
     }
@@ -344,16 +350,22 @@ async function handleRequest(request, env) {
     if (url.pathname === "/api/admin/users" && request.method === "PATCH") {
       try {
         const body = await request.json();
-        // Chỉ developer mới set role admin
-        if (body.role === "admin" && adminRole !== "developer") {
-          return Response.json({ success: false, error: "Chỉ developer mới set role admin" }, { status: 403 });
+        if (body.role !== undefined) {
+          if (body.role === "admin" && adminRole !== "developer") {
+            return Response.json({ success: false, error: "Chỉ developer mới set role admin" }, { status: 403 });
+          }
+          await env.DB.prepare("UPDATE allowed_users SET role = ? WHERE email = ?").bind(body.role, body.email).run();
+          log("info", "admin_update_role", { by: adminRole, email: body.email, role: body.role });
         }
-        await env.DB.prepare("UPDATE allowed_users SET role = ? WHERE email = ?").bind(body.role, body.email).run();
-        log("info", "admin_update_role", { by: "developer", email: body.email, role: body.role });
+        if (body.name !== undefined) {
+          await env.DB.prepare("UPDATE allowed_users SET name = ? WHERE email = ?").bind(body.name, body.email).run();
+          log("info", "admin_update_name", { by: adminRole, email: body.email });
+        }
         return Response.json({ success: true });
       } catch (err) {
-        log("error", "admin_update_role_failed", { message: err.message });
-        return Response.json({ success: false, error: "Không thể đổi role" }, { status: 502 });
+        log("error", "admin_update_failed", { message: err.message });
+        await notifyTelegram(env, "admin_update_failed", { message: err.message });
+        return Response.json({ success: false, error: "Không thể cập nhật" }, { status: 502 });
       }
     }
 
@@ -394,12 +406,12 @@ async function handleRequest(request, env) {
   // API trả về thông tin user
   if (url.pathname === "/api/me") {
     const userRecord = await env.DB.prepare(
-      "SELECT role FROM allowed_users WHERE email = ?"
+      "SELECT role, name FROM allowed_users WHERE email = ?"
     ).bind(session.email).first();
 
     return Response.json({
       email: session.email,
-      name: session.name,
+      name: userRecord?.name,
       role: userRecord?.role || "user"
     });
   }
@@ -424,7 +436,12 @@ async function handleRequest(request, env) {
       time <= s.endH * 60 + s.endM
     );
 
-    if (!validSession && !["admin", "developer"].includes(session.role)) {
+    const checkinUserRecord = await env.DB.prepare(
+      "SELECT role FROM allowed_users WHERE email = ?"
+    ).bind(session.email).first();
+    const checkinRole = checkinUserRecord?.role || "user";
+
+    if (!validSession && !["admin", "developer"].includes(checkinRole)) {
       log("warn", "checkin_outside_hours", { user: session.email });
       return Response.json({ success: false, error: "Ngoài giờ điểm danh" }, { status: 403 });
     }
@@ -442,17 +459,25 @@ async function handleRequest(request, env) {
           user: session.email,
           ca: body?.ca,
         });
+        await notifyTelegram(env, "checkin_apps_script_http_error", {
+          status: res.status,
+          user: session.email,
+        });
         return Response.json({ success: false, error: "Lỗi kết nối hệ thống điểm danh" }, { status: 502 });
       }
 
       const data = await res.json();
 
-      if (!data.success) {
+      if (data.status !== "OK" && data.status !== "EXIST" && !data.success) {
         log("warn", "checkin_apps_script_returned_error", {
           error: data.error,
           user: session.email,
           ca: body?.ca,
           studentId: body?.studentId,
+        });
+        await notifyTelegram(env, "checkin_apps_script_returned_error", {
+          error: data.error,
+          user: session.email,
         });
       }
 
@@ -479,6 +504,7 @@ async function handleRequest(request, env) {
 
       if (!res.ok) {
         log("error", "students_apps_script_http_error", { status: res.status, statusText: res.statusText });
+        await notifyTelegram(env, "students_apps_script_http_error", { status: res.status });
         return Response.json({ success: false, error: "Lỗi lấy danh sách học sinh" }, { status: 502 });
       }
 

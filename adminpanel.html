@@ -59,6 +59,7 @@
       <div class="card-title">Thêm người dùng</div>
       <div class="add-form">
         <input type="email" id="newEmail" placeholder="email@gmail.com" />
+        <input type="text" id="newName" placeholder="Họ và tên" />
         <select id="newRole">
           <option value="user">user</option>
           <option value="admin">admin</option>
@@ -189,28 +190,30 @@
         }
 
         const rows = data.users.map(u => {
+          const nameCell = `<input class="role-select" type="text" value="${u.name || ''}" placeholder="Chưa có tên"
+    onblur="updateName('${u.email}', this.value, this)"
+    style="width:140px;" />`;
           const roleCell = `
-              <select class="role-select" onchange="updateRole('${u.email}', this.value, this)">
-                <option value="user"  ${u.role === "user" ? "selected" : ""}>user</option>
-                <option value="admin" ${u.role === "admin" ? "selected" : ""}>admin</option>
-              </select>`;
-
+    <select class="role-select" onchange="updateRole('${u.email}', this.value, this)">
+      <option value="user"  ${u.role === "user" ? "selected" : ""}>user</option>
+      <option value="admin" ${u.role === "admin" ? "selected" : ""}>admin</option>
+    </select>`;
           const delBtn = `<button class="btn btn-danger" onclick="removeUser('${u.email}', '${u.role}', this)">Xóa</button>`;
-
           return `<tr>
-              <td>${u.email}</td>
-              <td>${roleCell}</td>
-              <td>${delBtn}</td>
-            </tr>`;
+    <td>${u.email}</td>
+    <td>${nameCell}</td>
+    <td>${roleCell}</td>
+    <td>${delBtn}</td>
+  </tr>`;
         }).join("");
 
         wrap.innerHTML = `
-            <table class="user-table">
-              <thead><tr>
-                <th>Email</th><th>Role</th><th></th>
-              </tr></thead>
-              <tbody>${rows}</tbody>
-            </table>`;
+  <table class="user-table">
+    <thead><tr>
+      <th>Email</th><th>Tên</th><th>Role</th><th></th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
       } catch {
         wrap.innerHTML = '<div class="empty">Lỗi tải danh sách</div>';
       }
@@ -218,17 +221,19 @@
 
     async function addUser() {
       const email = document.getElementById("newEmail").value.trim();
+      const name = document.getElementById("newName").value.trim();
       const role = document.getElementById("newRole").value;
       if (!email) { showNotify("⚠️ Nhập email trước"); return; }
 
       const res = await authFetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, role }),
+        body: JSON.stringify({ email, role, name }),
       });
       const data = await res.json();
       if (data.success) {
         document.getElementById("newEmail").value = "";
+        document.getElementById("newName").value = "";
         showNotify("✅ Đã thêm " + email);
         loadUsers();
       } else {
@@ -276,6 +281,22 @@
       el.textContent = msg;
       el.classList.add("show");
       setTimeout(() => el.classList.remove("show"), 2500);
+    }
+
+    async function updateName(email, name, input) {
+      input.disabled = true;
+      const res = await authFetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotify("✅ Đã cập nhật tên " + email);
+      } else {
+        showNotify("❌ " + (data.error || "Lỗi không xác định"));
+      }
+      input.disabled = false;
     }
   </script>
 </body>

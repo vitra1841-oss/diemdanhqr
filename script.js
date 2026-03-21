@@ -413,7 +413,7 @@ function onScanSuccess(decodedText) {
   // Gửi lên Apps Script
   fetch(sheetURL, {
     method: "POST",
-    body: JSON.stringify({ id: studentID, name: studentName, lop, session, scannedBy: currentUser?.email ?? "unknown" }),
+    body: JSON.stringify({ id: studentID, name: studentName, lop, session, scannedBy: currentUser?.name }),
   }).catch((err) => {
     sendLog("checkin_fetch_failed", { message: err.message, studentID, session });
   });
@@ -544,7 +544,7 @@ function manualCheckin() {
   const lop = studentDB[foundID]?.lop || "";
   fetch(sheetURL, {
     method: "POST",
-    body: JSON.stringify({ id: foundID, name: foundName, lop, session, scannedBy: currentUser?.email ?? "unknown" }),
+    body: JSON.stringify({ id: foundID, name: foundName, lop, session, scannedBy: currentUser?.name }),
   }).catch((err) => {
     sendLog("manual_checkin_fetch_failed", { message: err.message, studentID: foundID, session });
   });
@@ -697,7 +697,7 @@ function deleteAttendance(studentID) {
   const session = getCurrentSession();
   fetch(sheetURL, {
     method: "POST",
-    body: JSON.stringify({ action: "delete", id: studentID, session, scannedBy: currentUser?.email ?? "unknown" }),
+    body: JSON.stringify({ action: "delete", id: studentID, session, scannedBy: currentUser?.name }),
   }).catch((err) => {
     sendLog("delete_fetch_failed", { message: err.message, studentID, session });
   });
