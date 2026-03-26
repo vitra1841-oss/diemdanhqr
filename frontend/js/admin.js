@@ -1,85 +1,8 @@
-<!doctype html>
-<html lang="vi">
+// ============================
+// ADMIN PANEL
+// ============================
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quản trị - Điểm Danh QR</title>
-  <link rel="icon" type="image/png" href="TNTT.png" />
-
-  <link rel="stylesheet" href="adminpanel.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@200..900&display=swap" rel="stylesheet" />
-  <meta name="theme-color" content="#1f1d16">
-</head>
-
-<body>
-
-  <!-- ─── Màn hình đăng nhập ─── -->
-  <div id="loginScreen">
-    <div class="login-box">
-      <h2 class="login-title">QUẢN TRỊ</h2>
-      <p id="errorMsg" style="color:#ff6b6b;font-size:13px;margin:-8px 0 16px 0;text-align:left;display:none;">
-        Sai tên đăng nhập hoặc mật khẩu
-      </p>
-
-      <div class="input-group">
-        <input type="text" id="username" placeholder=" " autocomplete="off" />
-        <label for="username">Tên đăng nhập</label>
-      </div>
-
-      <div class="input-group">
-        <input type="password" id="password" placeholder=" " />
-        <label for="password">Mật khẩu</label>
-        <button type="button" class="toggle-pwd" onclick="togglePassword()">
-          <svg id="eyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </button>
-      </div>
-
-      <button class="start-btn login-btn" onclick="doLogin()">Đăng nhập</button>
-    </div>
-  </div>
-
-  <!-- ─── Màn hình quản trị ─── -->
-  <div id="adminScreen" style="display:none; padding: 24px 16px;">
-    <div class="header">
-      <div class="header-left">
-        <h1>Quản trị</h1>
-        <span class="role-badge developer">DEVELOPER</span>
-      </div>
-      <button class="logout-btn" onclick="doLogout()">Đăng xuất</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Thêm người dùng</div>
-      <div class="add-form">
-        <input type="email" id="newEmail" placeholder="email@gmail.com" />
-        <input type="text" id="newName" placeholder="Họ và tên" />
-        <select id="newRole">
-          <option value="user">user</option>
-          <option value="admin">admin</option>
-        </select>
-        <button class="btn btn-primary" onclick="addUser()">Thêm</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Danh sách người dùng</div>
-      <div id="tableWrap">
-        <div class="loading">Đang tải...</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="notify" id="notify"></div>
-
-  <script>
-    let adminToken = null;
+let adminToken = null;
 
     // ─── Login ───────────────────────────────────────────────────────────────
 
@@ -298,7 +221,3 @@
       }
       input.disabled = false;
     }
-  </script>
-</body>
-
-</html>

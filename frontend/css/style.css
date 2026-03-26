@@ -420,7 +420,6 @@ details.is-open .summary-icon {
   display: none;
 }
 
-/* ---------- OFF-HOUR BANNER ---------- */
 .off-hour-banner {
   width: 90%;
   max-width: 400px;
@@ -443,7 +442,6 @@ details.is-open .summary-icon {
   font-size: 0.78rem;
 }
 
-/* ---------- TEST PANEL ---------- */
 .test-panel {
   position: fixed;
   bottom: 16px;
@@ -575,12 +573,10 @@ details.is-open .summary-icon {
   }
 }
 
-/* ---------- KHUNG ĐĂNG NHẬP ---------- */
 .login-box {
   width: 90%;
   max-width: 400px;
   background-color: #24221b;
-  /* Màu nền hơi sáng hơn body một chút để tạo khối nổi */
   border-radius: 20px;
   padding: 30px 20px 20px 20px;
   margin-top: 10px;
@@ -603,7 +599,6 @@ details.is-open .summary-icon {
   text-align: left;
 }
 
-/* Kiểu dáng cho ô nhập liệu giống ảnh mẫu */
 .input-group {
   position: relative;
   margin-bottom: 25px;
@@ -616,7 +611,6 @@ details.is-open .summary-icon {
   background: transparent;
   border: 1px solid #5a5a5c;
   border-radius: 12px;
-  /* Bo góc tròn nhẹ */
   color: white;
   font-size: 16px;
   font-family: inherit;
@@ -626,10 +620,8 @@ details.is-open .summary-icon {
 
 .input-group input:focus {
   border-color: #ffd400;
-  /* Viền sáng màu vàng khi bấm vào */
 }
 
-/* Tạo hiệu ứng chữ đè lên viền */
 .input-group label {
   position: absolute;
   top: 14px;
@@ -654,16 +646,13 @@ details.is-open .summary-icon {
   color: #a3a3a4;
 }
 
-/* Điều chỉnh lại nút Đăng nhập */
 .login-btn {
   margin: 5px 0 20px 0;
   width: 100%;
   border-radius: 12px;
-  /* Chỉnh cho bo góc vuông vắn hơn, giống ô input */
   padding: 14px;
 }
 
-/* Các nút Google */
 .google-btn {
   width: 100%;
   padding: 12px;
@@ -687,7 +676,6 @@ details.is-open .summary-icon {
   border-color: #a3a3a4;
 }
 
-/* Link Quên mật khẩu */
 .forgot-pwd {
   text-align: left;
   margin-top: 25px;
@@ -714,7 +702,6 @@ details.is-open .summary-icon {
   animation: fadeIn 0.6s ease-out;
 }
 
-/* ---------- DIVIDER ---------- */
 .divider {
   display: flex;
   align-items: center;
@@ -732,7 +719,6 @@ details.is-open .summary-icon {
   background: #525255;
 }
 
-/* ---------- FORGOT PASSWORD INLINE ---------- */
 .forgot-pwd-inline {
   display: block;
   text-align: right;
@@ -746,7 +732,6 @@ details.is-open .summary-icon {
   text-decoration: underline;
 }
 
-/* ---------- TOGGLE PASSWORD ---------- */
 .toggle-pwd {
   position: absolute;
   right: 14px;
@@ -777,7 +762,6 @@ details.is-open .summary-icon {
   text-align: left;
 }
 
-/* ---------- PULL TO REFRESH ---------- */
 .pull-indicator {
   position: fixed;
   top: -50px;

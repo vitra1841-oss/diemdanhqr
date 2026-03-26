@@ -1,15 +1,15 @@
 name = "diemdanhqr"
-main = "worker.js"
+main = "backend/src/index.js"
 compatibility_date = "2024-01-01"
 
 [vars]
 APP_URL = "https://xudoanducmevonhiem.id.vn"
 REDIRECT_URI = "https://xudoanducmevonhiem.id.vn/auth/callback"
-APPS_SCRIPT_URL= "https://script.google.com/macros/s/AKfycbwa5jLbOhj2F7oHjBeLNDYpzObC8TGbHbgJ51pf8RLqIqCmxovGgCv_IYcYcCjuG7Mf4A/exec"
-APPS_SCRIPT_URL_INDEX= "https://script.google.com/macros/s/AKfycbwGX253liSmk3kahAlB5bK12jg92mfB7c8ITpLiZaV1f-vyPcBPNeCLt9hMaeMg9Ru8Xg/exec"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa5jLbOhj2F7oHjBeLNDYpzObC8TGbHbgJ51pf8RLqIqCmxovGgCv_IYcYcCjuG7Mf4A/exec"
+APPS_SCRIPT_URL_INDEX = "https://script.google.com/macros/s/AKfycbwGX253liSmk3kahAlB5bK12jg92mfB7c8ITpLiZaV1f-vyPcBPNeCLt9hMaeMg9Ru8Xg/exec"
 
 [assets]
-directory = "."
+directory = "frontend"
 binding = "ASSETS"
 run_worker_first = true
 
@@ -17,7 +17,7 @@ run_worker_first = true
 APP_URL = "https://dev.xudoanducmevonhiem.id.vn"
 REDIRECT_URI = "https://dev.xudoanducmevonhiem.id.vn/auth/callback"
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa5jLbOhj2F7oHjBeLNDYpzObC8TGbHbgJ51pf8RLqIqCmxovGgCv_IYcYcCjuG7Mf4A/exec"
-APPS_SCRIPT_URL_INDEX= "https://script.google.com/macros/s/AKfycbwGX253liSmk3kahAlB5bK12jg92mfB7c8ITpLiZaV1f-vyPcBPNeCLt9hMaeMg9Ru8Xg/exec"
+APPS_SCRIPT_URL_INDEX = "https://script.google.com/macros/s/AKfycbwGX253liSmk3kahAlB5bK12jg92mfB7c8ITpLiZaV1f-vyPcBPNeCLt9hMaeMg9Ru8Xg/exec"
 
 [[d1_databases]]
 binding = "DB"
