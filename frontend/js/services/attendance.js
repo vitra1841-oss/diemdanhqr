@@ -3,13 +3,12 @@
 // ============================
 
 import { state } from '../state.js';
-import { studentDB } from './studentDB.js';
 import { getCurrentSession } from './sessionTime.js';
 import { SESSION_CONFIG } from '../config.js';
 import { postCheckin, deleteCheckin } from '../api/checkin.js';
 import { showNotify } from '../utils/notify.js';
-
-// ─── Cache key ────────────────────────────────────────────────────────────────
+import { clearSuggestions } from '../utils/suggestions.js';
+import { lookupStudent, upsertStudent } from './studentDB.js';
 
 export function getAttendanceCacheKey() {
   const date = new Date().toLocaleDateString("en-CA", {
@@ -18,21 +17,38 @@ export function getAttendanceCacheKey() {
   return "attendance_" + date;
 }
 
-// ─── Add to UI list ───────────────────────────────────────────────────────────
+function persistAttendance() {
+  try {
+    localStorage.setItem(
+      getAttendanceCacheKey(),
+      JSON.stringify(state.scannedStudents)
+    );
+  } catch {}
+}
 
-export function addToList(studentID, studentName) {
-  const s = studentDB[studentID];
-  const lop = s ? s.lop : "";
+function normalizeAttendanceEntry(student) {
+  if (!student?.id || !student?.idName) return null;
+
+  return {
+    id: student.id,
+    name: student.idName,
+    lop: student.lop || "",
+  };
+}
+
+export function addToList(student) {
+  const entry = normalizeAttendanceEntry(student);
+  if (!entry) return;
 
   const tbody = document.getElementById("scanTableBody");
   const tr = document.createElement("tr");
-  tr.dataset.id = studentID;
+  tr.dataset.id = entry.id;
   tr.innerHTML =
-    "<td class='col-id'>" + studentID + "</td>" +
-    "<td class='col-name'>" + studentName + "</td>" +
-    "<td class='col-lop'>" + (lop || "—") + "</td>" +
+    "<td class='col-id'>" + entry.id + "</td>" +
+    "<td class='col-name'>" + entry.name + "</td>" +
+    "<td class='col-lop'>" + (entry.lop || "—") + "</td>" +
     "<td class='col-del'><button class='del-btn' onclick='window.deleteAttendance(\"" +
-    studentID + "\")'>✕</button></td>";
+    entry.id + "\")'>✕</button></td>";
   tbody.appendChild(tr);
 
   const detailsDropdown = document.querySelector(".dropdown");
@@ -44,23 +60,14 @@ export function addToList(studentID, studentName) {
     Object.keys(state.scannedStudents).length;
 }
 
-// ─── Delete attendance ────────────────────────────────────────────────────────
-
 export function deleteAttendance(studentID) {
-  if (
-    !confirm(
-      "Xóa điểm danh " + (state.scannedStudents[studentID] || studentID) + "?"
-    )
-  )
+  const currentEntry = state.scannedStudents[studentID];
+  if (!confirm("Xóa điểm danh " + (currentEntry?.name || studentID) + "?")) {
     return;
+  }
 
   delete state.scannedStudents[studentID];
-  try {
-    localStorage.setItem(
-      getAttendanceCacheKey(),
-      JSON.stringify(state.scannedStudents)
-    );
-  } catch (e) {}
+  persistAttendance();
 
   const tr = document.querySelector(
     "#scanTableBody tr[data-id='" + studentID + "']"
@@ -82,31 +89,67 @@ export function deleteAttendance(studentID) {
   showNotify("🗑️ Đã xóa điểm danh");
 }
 
-// ─── Restore from localStorage ────────────────────────────────────────────────
-
 export function restoreAttendance() {
   try {
     Object.keys(localStorage)
-      .filter(
-        (k) =>
-          k.startsWith("attendance_") && k !== getAttendanceCacheKey()
-      )
+      .filter((k) => k.startsWith("attendance_") && k !== getAttendanceCacheKey())
       .forEach((k) => localStorage.removeItem(k));
 
     const saved = localStorage.getItem(getAttendanceCacheKey());
-    if (saved) {
-      const data = JSON.parse(saved);
-      for (let id in data) {
-        state.scannedStudents[id] = data[id];
-        addToList(id, data[id]);
-      }
+    if (!saved) return;
+
+    const data = JSON.parse(saved);
+    for (const id of Object.keys(data)) {
+      const entry = data[id];
+      if (!entry?.name) continue;
+
+      state.scannedStudents[id] = {
+        name: entry.name,
+        lop: entry.lop || "",
+      };
+      addToList({
+        id,
+        idName: entry.name,
+        lop: entry.lop || "",
+      });
     }
-  } catch (e) {}
+  } catch {}
 }
 
-// ─── Manual check-in ─────────────────────────────────────────────────────────
+export function recordAttendance(student, session) {
+  const entry = normalizeAttendanceEntry(student);
+  if (!entry) {
+    showNotify("❌ Không tìm thấy thông tin");
+    return false;
+  }
 
-export function manualCheckin() {
+  if (state.scannedStudents[entry.id]) {
+    showNotify("⚠️ Đã điểm danh rồi");
+    return false;
+  }
+
+  state.scannedStudents[entry.id] = {
+    name: entry.name,
+    lop: entry.lop,
+  };
+  persistAttendance();
+  addToList(student);
+
+  const cfg = SESSION_CONFIG.find((c) => c.id === session);
+  const label = cfg ? cfg.label : session;
+  showNotify("✅ Điểm danh ca " + label + " thành công");
+
+  postCheckin({
+    id: entry.id,
+    name: entry.name,
+    lop: entry.lop,
+    session,
+  });
+
+  return true;
+}
+
+export async function manualCheckin() {
   const session = getCurrentSession();
   if (!session) {
     showNotify("🔒 Ngoài giờ điểm danh");
@@ -114,57 +157,29 @@ export function manualCheckin() {
   }
 
   const input = document.getElementById("manualInput");
+  const confirmBtn = document.querySelector(".confirmIcon");
   const value = input.value.trim().replace(/\s+/g, " ").normalize("NFC");
 
-  let foundID = null;
-  let foundName = null;
+  if (!value) return;
 
-  if (/^[0-9]{5}$/.test(value)) {
-    if (studentDB[value]) {
-      foundID = value;
-      foundName = studentDB[value].idName;
-    }
-  } else {
-    const valueLower = value.toLowerCase().normalize("NFC");
-    for (let id in studentDB) {
-      const s = studentDB[id];
-      const hoTen = s.hoTen.toLowerCase().normalize("NFC");
-      const full = ((s.tenThanh || "") + " " + s.hoTen)
-        .toLowerCase()
-        .normalize("NFC");
-      if (hoTen === valueLower || full === valueLower) {
-        foundID = id;
-        foundName = s.idName;
-        break;
-      }
-    }
-  }
+  input.disabled = true;
+  confirmBtn.disabled = true;
 
-  input.value = "";
-  document.querySelector(".confirmIcon").disabled = true;
-
-  if (!foundID) {
-    showNotify("❌ Không tìm thấy thông tin");
-    return;
-  }
-  if (state.scannedStudents[foundID]) {
-    showNotify("⚠️ Đã điểm danh rồi");
-    return;
-  }
-
-  state.scannedStudents[foundID] = foundName;
   try {
-    localStorage.setItem(
-      getAttendanceCacheKey(),
-      JSON.stringify(state.scannedStudents)
-    );
-  } catch (e) {}
-  addToList(foundID, foundName);
+    const student = await lookupStudent(value);
+    if (!student) {
+      showNotify("❌ Không tìm thấy thông tin");
+      return;
+    }
 
-  const cfg = SESSION_CONFIG.find((c) => c.id === session);
-  const label = cfg ? cfg.label : session;
-  showNotify("✅ Điểm danh ca " + label + " thành công");
-
-  const lop = studentDB[foundID]?.lop || "";
-  postCheckin({ id: foundID, name: foundName, lop, session });
+    upsertStudent(student);
+    recordAttendance(student, session);
+    input.value = "";
+    clearSuggestions();
+  } catch (err) {
+    showNotify("❌ " + (err?.message || "Không thể tra cứu học sinh"));
+  } finally {
+    input.disabled = false;
+    confirmBtn.disabled = input.value.trim() === "";
+  }
 }

@@ -1,4 +1,4 @@
-// ============================
+﻿// ============================
 // ADMIN ROUTES (/api/admin/*)
 // ============================
 
@@ -43,7 +43,7 @@ export async function handleAdmin(request, env, url) {
   const token = authHeader.replace("Bearer ", "");
   const adminRole = await verifyAdminToken(token, env.SESSION_SECRET);
 
-  if (!adminRole || !["developer", "admin"].includes(adminRole)) {
+  if (adminRole !== "developer") {
     return new Response("Forbidden", { status: 403 });
   }
 

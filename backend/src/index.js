@@ -1,4 +1,4 @@
-// ============================
+﻿// ============================
 // ENTRY POINT
 // ============================
 
@@ -7,6 +7,8 @@ import { notifyTelegram } from './services/telegram.js';
 import { verifySession } from './services/session.js';
 import { handleAuth } from './routes/auth.js';
 import { handleAdminLogin, handleAdmin } from './routes/admin.js';
+import { handlePageRoutes } from './routes/pages.js';
+import { handleStudentsAdmin } from './routes/students-admin.js';
 import { handleCheckin } from './routes/checkin.js';
 import { handleStudents } from './routes/students.js';
 import { handleMe, handleLogError } from './routes/me.js';
@@ -34,16 +36,8 @@ async function handleRequest(request, env) {
   const authRes = await handleAuth(request, env, url);
   if (authRes) return authRes;
 
-  if (url.pathname === "/admin" || url.pathname === "/adminpanel") {
-    const assetRes = await env.ASSETS.fetch(
-      new Request(new URL("/adminpanel.html", request.url), request)
-    );
-    if (assetRes.status >= 300 && assetRes.status < 400) {
-      const loc = assetRes.headers.get("Location");
-      if (loc) return env.ASSETS.fetch(new Request(new URL(loc, request.url), request));
-    }
-    return assetRes;
-  }
+  const pageRes = await handlePageRoutes(request, env, url);
+  if (pageRes) return pageRes;
 
   if (url.pathname === "/login" || url.pathname === "/login.html") {
     const cookieLogin = request.headers.get("Cookie") || "";
@@ -65,6 +59,10 @@ async function handleRequest(request, env) {
     return handleAdmin(request, env, url);
   }
 
+  if (url.pathname.startsWith("/api/students-admin")) {
+    return handleStudentsAdmin(request, env, url);
+  }
+
   const cookie = request.headers.get("Cookie") || "";
   const session = await verifySession(cookie, env.SESSION_SECRET);
 
@@ -79,7 +77,7 @@ async function handleRequest(request, env) {
   if (url.pathname === "/api/log-error") return handleLogError(request, env);
   if (url.pathname === "/api/me") return handleMe(env, session);
   if (url.pathname === "/api/checkin") return handleCheckin(request, env, session);
-  if (url.pathname === "/api/students") return handleStudents(env);
+  if (url.pathname === "/api/students") return handleStudents(request, env);
 
   return env.ASSETS.fetch(request);
 }

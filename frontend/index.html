@@ -11,12 +11,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@200..900&display=swap" rel="stylesheet" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Điểm Danh QR">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="application-name" content="Điểm Danh QR">
-  <meta name="theme-color" content="#1f1d16">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Điểm Danh QR" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="Điểm Danh QR" />
 </head>
 
 <body>
@@ -28,8 +27,7 @@
 
   <div id="notify" class="notify"></div>
 
-  <!-- Banner ngoài giờ -->
-  <div id="offHourBanner" class="off-hour-banner" style="display: none"></div>
+  <div id="offHourBanner" class="off-hour-banner"></div>
 
   <div class="cameraContainer">
     <div id="reader"></div>
@@ -39,10 +37,8 @@
   <button id="scanBtn" onclick="toggleScanner()" class="scanBtn">
     <span id="scanBtnText" class="scanBtn-text">Bật Camera</span>
     <span id="scanBtnLoading" class="scanBtn-loading">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-        stroke-linecap="round">
-        <path
-          d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
       </svg>
       Đang tải...
     </span>
@@ -54,10 +50,10 @@
     <h3>Điểm danh thủ công</h3>
     <div class="inputWrap">
       <input type="search" id="manualInput" placeholder="Nhập: ID/Họ và tên" autocomplete="off" />
-      <button class="confirmIcon" onclick="manualCheckin()" disabled>
+      <button class="confirmIcon" onclick="manualCheckin()" disabled aria-label="Xác nhận điểm danh thủ công" title="Xác nhận điểm danh thủ công">
+        <span class="sr-only">Xác nhận điểm danh thủ công</span>
         <svg viewBox="0 0 24 24" width="25" height="25">
-          <path d="M12 19V5M12 5L6 11M12 5L18 11" stroke="#dcdcdc" stroke-width="2.5" stroke-linecap="round"
-            stroke-linejoin="round" />
+          <path d="M12 19V5M12 5L6 11M12 5L18 11" stroke="#dcdcdc" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </button>
       <ul id="suggestions"></ul>
@@ -67,8 +63,7 @@
   <details class="dropdown">
     <summary>
       <svg class="summary-icon" viewBox="0 0 24 24" width="16" height="16" fill="none">
-        <polyline points="5,15 12,8 19,15" stroke="#8e8e8f" stroke-width="2.5" stroke-linecap="round"
-          stroke-linejoin="round" />
+        <polyline points="5,15 12,8 19,15" stroke="#8e8e8f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
       Danh sách đã điểm danh
     </summary>
@@ -87,9 +82,8 @@
     </div>
   </details>
 
-  <!-- Test Mode Panel (ẩn khi TEST_MODE_ENABLED = false) -->
-  <div id="testPanel" class="test-panel" style="display: none">
-    <div class="test-panel-title">🧪 Test Mode</div>
+  <div id="testPanel" class="test-panel">
+    <div class="test-panel-title">Test Mode</div>
     <div id="testSessionBtns" class="test-session-btns"></div>
   </div>
 

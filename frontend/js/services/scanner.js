@@ -3,16 +3,12 @@
 // ============================
 
 import { state } from '../state.js';
-import { SESSION_CONFIG } from '../config.js';
 import { getCurrentSession } from './sessionTime.js';
-import { studentDB } from './studentDB.js';
-import { postCheckin } from '../api/checkin.js';
+import { fetchStudentById } from './studentDB.js';
 import { showNotify } from '../utils/notify.js';
-import { addToList, getAttendanceCacheKey } from './attendance.js';
+import { recordAttendance } from './attendance.js';
 
-// ─── QR scan result handler ───────────────────────────────────────────────────
-
-function onScanSuccess(decodedText) {
+async function onScanSuccess(decodedText) {
   if (state.scanLocked) return;
 
   const now = Date.now();
@@ -24,17 +20,6 @@ function onScanSuccess(decodedText) {
     showNotify("❌ QR không hợp lệ");
     return;
   }
-  const studentID = match[0];
-
-  const student = studentDB[studentID];
-  if (!student) {
-    showNotify("❌ Không tìm thấy học sinh");
-    return;
-  }
-  if (state.scannedStudents[studentID]) {
-    showNotify("⚠️ Đã điểm danh rồi");
-    return;
-  }
 
   const session = getCurrentSession();
   if (!session) {
@@ -42,27 +27,18 @@ function onScanSuccess(decodedText) {
     return;
   }
 
-  const studentName = student.idName;
-  const lop = student.lop || "";
-
-  state.scannedStudents[studentID] = studentName;
   try {
-    localStorage.setItem(
-      getAttendanceCacheKey(),
-      JSON.stringify(state.scannedStudents)
-    );
-  } catch (e) {}
+    const student = await fetchStudentById(match[0]);
+    if (!student) {
+      showNotify("❌ Không tìm thấy học sinh");
+      return;
+    }
 
-  addToList(studentID, studentName);
-
-  const cfg = SESSION_CONFIG.find((c) => c.id === session);
-  const label = cfg ? cfg.label : session;
-  showNotify("✅ Điểm danh ca " + label + " thành công");
-
-  postCheckin({ id: studentID, name: studentName, lop, session });
+    recordAttendance(student, session);
+  } catch (err) {
+    showNotify("❌ " + (err?.message || "Không thể tra cứu học sinh"));
+  }
 }
-
-// ─── Toggle camera ────────────────────────────────────────────────────────────
 
 export function toggleScanner() {
   const session = getCurrentSession();
@@ -76,7 +52,7 @@ export function toggleScanner() {
       state.html5QrCode.clear();
       state.html5QrCode = null;
     }
-    // Html5Qrcode is a global loaded via CDN script in index.html
+
     state.html5QrCode = new Html5Qrcode("reader"); // eslint-disable-line no-undef
 
     state.html5QrCode

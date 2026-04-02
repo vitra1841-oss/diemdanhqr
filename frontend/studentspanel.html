@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Học sinh - Điểm Danh QR</title>
+  <link rel="icon" type="image/png" href="assets/TNTT.png" />
+  <link rel="stylesheet" href="css/studentspanel.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@200..900&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+  <div id="studentsScreen" class="students-screen">
+    <div class="page-shell">
+      <div id="studentsAccessState" class="card access-card hidden">
+        <p class="access-title">Bạn không có quyền truy cập trang này.</p>
+        <p class="access-text">Trang quản lý học sinh chỉ dành cho tài khoản có role admin hoặc developer.</p>
+      </div>
+
+      <div id="studentsContent" class="hidden">
+        <div class="header">
+          <div>
+            <p class="eyebrow">Quản lý dữ liệu D1</p>
+            <h1>Danh sách học sinh</h1>
+          </div>
+        </div>
+
+        <div class="layout">
+          <div class="main-column">
+            <section class="card">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Bảng dữ liệu</p>
+                  <h2>Chọn lớp để xem danh sách</h2>
+                </div>
+                <div class="toolbar">
+                  <select id="studentClassFilter" aria-label="Chọn lớp để lọc danh sách học sinh" title="Chọn lớp để lọc danh sách học sinh" onchange="loadStudentsSheet()">
+                    <option value="">Chọn lớp</option>
+                  </select>
+                  <input type="search" id="studentSearch" placeholder="Tìm trong lớp đã chọn" />
+                  <button class="ghost-btn" onclick="loadStudentsSheet()">Lọc</button>
+                </div>
+              </div>
+
+              <div id="studentTableWrap" class="sheet-wrap">
+                <div class="empty">Chọn lớp để hiển thị danh sách học sinh.</div>
+              </div>
+            </section>
+          </div>
+
+          <aside class="side-column">
+            <section class="card add-student-card">
+              <p class="eyebrow">Thêm học sinh mới</p>
+              <div class="student-form-grid">
+                <div class="field full">
+                  <label for="studentIdInput">ID</label>
+                  <input type="text" id="studentIdInput" placeholder="Ví dụ: 01234" />
+                </div>
+                <div class="field">
+                  <label for="studentSaintInput">Tên thánh</label>
+                  <input type="text" id="studentSaintInput" />
+                </div>
+                <div class="field">
+                  <label for="studentClassInput">Lớp</label>
+                  <input type="text" id="studentClassInput" placeholder="Ví dụ: 8/1" />
+                </div>
+                <div class="field full">
+                  <label for="studentNameInput">Họ tên</label>
+                  <input type="text" id="studentNameInput" />
+                </div>
+              </div>
+              <button class="primary-btn wide" onclick="addStudent()">Lưu học sinh</button>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notify" id="studentsNotify"></div>
+
+  <script src="js/studentspanel.js"></script>
+</body>
+
+</html>

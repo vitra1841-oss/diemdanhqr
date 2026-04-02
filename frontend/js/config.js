@@ -11,9 +11,5 @@ export const SESSION_CONFIG = [
 
 export const TEST_MODE_ENABLED = true;
 
-export const CACHE_KEY = "studentDB_cache";
-export const CACHE_TIME_KEY = "studentDB_cache_time";
-export const CACHE_DURATION = 24 * 60 * 60 * 1000;
-
 export const CHECKIN_URL = "/api/checkin";
 export const STUDENTS_URL = "/api/students";

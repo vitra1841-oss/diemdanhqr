@@ -1,22 +1,19 @@
 // ============================
-// MAIN — Entry point
+// MAIN - Entry point
 // ============================
 
 import { state } from './state.js';
 import { SESSION_CONFIG, TEST_MODE_ENABLED } from './config.js';
 import { getCurrentSession, getNextSessionInfo } from './services/sessionTime.js';
-import { studentDB, loadStudentDB, refreshDB } from './services/studentDB.js';
+import { searchStudents } from './services/studentDB.js';
 import { toggleScanner } from './services/scanner.js';
 import {
   manualCheckin,
   deleteAttendance,
   restoreAttendance,
 } from './services/attendance.js';
-import { showNotify } from './utils/notify.js';
-import { showSuggestions } from './utils/suggestions.js';
+import { clearSuggestions, showSuggestions } from './utils/suggestions.js';
 import { sendLog } from './api/logger.js';
-
-// ─── Global error logging ─────────────────────────────────────────────────────
 
 window.addEventListener("error", (e) => {
   sendLog("js_uncaught_error", {
@@ -33,14 +30,9 @@ window.addEventListener("unhandledrejection", (e) => {
   });
 });
 
-// ─── Expose globals for inline HTML onclick attributes ────────────────────────
-
 window.toggleScanner = toggleScanner;
 window.manualCheckin = manualCheckin;
 window.deleteAttendance = deleteAttendance;
-window.refreshDB = () => refreshDB(showNotify);
-
-// ─── Session status (lock/unlock UI) ─────────────────────────────────────────
 
 export function updateSessionStatus() {
   const session = getCurrentSession();
@@ -72,8 +64,6 @@ export function updateSessionStatus() {
 
 setInterval(updateSessionStatus, 60 * 1000);
 
-// ─── Test mode panel ──────────────────────────────────────────────────────────
-
 function initTestPanel() {
   if (!TEST_MODE_ENABLED) return;
   if (!state.currentUser || !["admin", "developer"].includes(state.currentUser.role)) return;
@@ -104,10 +94,8 @@ function setTestSession(sessionID, clickedBtn) {
     .forEach((b) => b.classList.remove("active"));
   if (clickedBtn) clickedBtn.classList.add("active");
   updateSessionStatus();
-  if (sessionID) showNotify("🧪 Test ca: " + sessionID);
+  if (sessionID) sendLog("test_session_override", { sessionID });
 }
-
-// ─── Dropdown animation ───────────────────────────────────────────────────────
 
 const details = document.querySelector(".dropdown");
 const summary = details.querySelector("summary");
@@ -136,8 +124,6 @@ summary.addEventListener("click", (e) => {
   }
 });
 
-// ─── Manual input events ──────────────────────────────────────────────────────
-
 document.getElementById("manualInput").addEventListener("keydown", function (e) {
   if (e.key === "Enter") {
     e.preventDefault();
@@ -146,21 +132,37 @@ document.getElementById("manualInput").addEventListener("keydown", function (e) 
 });
 
 const confirmBtn = document.querySelector(".confirmIcon");
-document.getElementById("manualInput").addEventListener("input", function () {
-  confirmBtn.disabled = this.value.trim() === "";
-  showSuggestions(this.value.trim(), studentDB, (selectedId) => {
-    document.getElementById("manualInput").value = selectedId;
-    manualCheckin();
-  });
+let suggestionRequestId = 0;
+document.getElementById("manualInput").addEventListener("input", async function () {
+  const keyword = this.value.trim();
+  confirmBtn.disabled = keyword === "";
+
+  if (!keyword) {
+    clearSuggestions();
+    return;
+  }
+
+  const requestId = ++suggestionRequestId;
+
+  try {
+    const matches = await searchStudents(keyword, 5);
+    if (requestId !== suggestionRequestId) return;
+
+    showSuggestions(matches, (student) => {
+      document.getElementById("manualInput").value = student.id;
+      manualCheckin();
+    });
+  } catch {
+    if (requestId !== suggestionRequestId) return;
+    clearSuggestions();
+  }
 });
 
 document.getElementById("manualInput").addEventListener("blur", function () {
   setTimeout(() => {
-    document.getElementById("suggestions").innerHTML = "";
+    clearSuggestions();
   }, 150);
 });
-
-// ─── Pull-to-refresh ──────────────────────────────────────────────────────────
 
 let startY = 0;
 let isPulling = false;
@@ -192,8 +194,6 @@ document.addEventListener("touchend", () => {
   }
 });
 
-// ─── Bootstrap ────────────────────────────────────────────────────────────────
-
 fetch("/api/me")
   .then((r) => r.json())
   .then((data) => {
@@ -204,9 +204,5 @@ fetch("/api/me")
     initTestPanel();
   });
 
-loadStudentDB(() => {
-  restoreAttendance();
-  updateSessionStatus();
-});
-
+restoreAttendance();
 updateSessionStatus();

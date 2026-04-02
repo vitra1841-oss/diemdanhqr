@@ -1,4 +1,7 @@
-{
+﻿{
   "name": "diemdanhqr-backend",
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "import:students": "node scripts/import-students-csv.mjs"
+  }
 }
