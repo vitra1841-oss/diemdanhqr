@@ -5,7 +5,7 @@
 import { state } from './state.js';
 import { SESSION_CONFIG, TEST_MODE_ENABLED } from './config.js';
 import { getCurrentSession, getNextSessionInfo } from './services/sessionTime.js';
-import { searchStudents } from './services/studentDB.js';
+import { searchStudents, initStudentDB } from './services/studentDB.js';
 import { toggleScanner } from './services/scanner.js';
 import {
   manualCheckin,
@@ -206,3 +206,4 @@ fetch("/api/me")
 
 restoreAttendance();
 updateSessionStatus();
+initStudentDB();

@@ -2,7 +2,7 @@
 // ADMIN PANEL
 // ============================
 
-let adminToken = null;
+let adminToken = localStorage.getItem("adminToken") || null;
 
 document.getElementById("password").addEventListener("keydown", (e) => {
   if (e.key === "Enter") doLogin();
@@ -49,6 +49,7 @@ async function doLogin() {
     }
 
     adminToken = data.token;
+    localStorage.setItem("adminToken", data.token);
     showAdminScreen();
   } catch {
     errorMsg.textContent = "Lỗi kết nối, thử lại";
@@ -58,6 +59,7 @@ async function doLogin() {
 
 function doLogout() {
   adminToken = null;
+  localStorage.removeItem("adminToken");
   document.getElementById("username").value = "";
   document.getElementById("password").value = "";
   document.getElementById("adminScreen").style.display = "none";
@@ -240,3 +242,31 @@ window.addUser = addUser;
 window.removeUser = removeUser;
 window.updateRole = updateRole;
 window.updateName = updateName;
+
+async function syncSheets() {
+  const btn = document.getElementById("btnSync");
+  btn.disabled = true;
+  btn.textContent = "Đang đồng bộ...";
+
+  try {
+    const res = await authFetch("/api/admin/sync_sheets", { method: "POST" });
+    const data = await res.json();
+    
+    if (data.success) {
+      if (data.count === 0) showNotify("Không có dữ liệu mới để đồng bộ");
+      else showNotify("Đã đồng bộ thành công " + data.count + " điểm danh!");
+    } else {
+      showNotify(data.error || "Có lỗi xảy ra");
+    }
+  } catch (err) {
+    showNotify("Không thể kết nối đến máy chủ");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Đồng bộ dữ liệu lên Google Sheet";
+  }
+}
+window.syncSheets = syncSheets;
+
+if (adminToken) {
+  showAdminScreen();
+}

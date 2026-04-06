@@ -116,7 +116,7 @@ export function restoreAttendance() {
   } catch {}
 }
 
-export function recordAttendance(student, session) {
+export async function recordAttendance(student, session) {
   const entry = normalizeAttendanceEntry(student);
   if (!entry) {
     showNotify("❌ Không tìm thấy thông tin");
@@ -128,25 +128,38 @@ export function recordAttendance(student, session) {
     return false;
   }
 
-  state.scannedStudents[entry.id] = {
-    name: entry.name,
-    lop: entry.lop,
-  };
-  persistAttendance();
-  addToList(student);
+  try {
+    await postCheckin({
+      id: entry.id,
+      name: entry.name,
+      lop: entry.lop,
+      session,
+    });
 
-  const cfg = SESSION_CONFIG.find((c) => c.id === session);
-  const label = cfg ? cfg.label : session;
-  showNotify("✅ Điểm danh ca " + label + " thành công");
+    state.scannedStudents[entry.id] = {
+      name: entry.name,
+      lop: entry.lop,
+    };
+    persistAttendance();
+    addToList(student);
 
-  postCheckin({
-    id: entry.id,
-    name: entry.name,
-    lop: entry.lop,
-    session,
-  });
+    const cfg = SESSION_CONFIG.find((c) => c.id === session);
+    const label = cfg ? cfg.label : session;
+    showNotify("✅ Điểm danh ca " + label + " thành công");
+    return true;
 
-  return true;
+  } catch (err) {
+    if (err.message === "EXIST") {
+       state.scannedStudents[entry.id] = { name: entry.name, lop: entry.lop };
+       persistAttendance();
+       addToList(student);
+       showNotify("⚠️ Học sinh này đã được điểm danh trước đó");
+       return true;
+    } else {
+       showNotify("❌ Lỗi: " + err.message);
+       return false;
+    }
+  }
 }
 
 export async function manualCheckin() {
@@ -172,8 +185,8 @@ export async function manualCheckin() {
       return;
     }
 
-    upsertStudent(student);
-    recordAttendance(student, session);
+    // Lưu ý: Hàm upsertStudent đã dư thừa do tìm từ mảng RAM, nhưng giữ để an toàn
+    await recordAttendance(student, session);
     input.value = "";
     clearSuggestions();
   } catch (err) {

@@ -1,4 +1,4 @@
-﻿name = "diemdanhqr"
+name = "diemdanhqr"
 main = "backend/src/index.js"
 compatibility_date = "2024-01-01"
 
@@ -6,6 +6,14 @@ compatibility_date = "2024-01-01"
 APP_URL = "https://xudoanducmevonhiem.id.vn"
 REDIRECT_URI = "https://xudoanducmevonhiem.id.vn/auth/callback"
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa5jLbOhj2F7oHjBeLNDYpzObC8TGbHbgJ51pf8RLqIqCmxovGgCv_IYcYcCjuG7Mf4A/exec"
+
+[triggers]
+crons = [
+  "30 2 * * 0",
+  "30 4 * * 0",
+  "0 13 * * 2",
+  "0 13 * * 4"
+]
 
 [assets]
 directory = "frontend"

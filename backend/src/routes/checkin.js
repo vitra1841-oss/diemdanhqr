@@ -35,38 +35,32 @@ export async function handleCheckin(request, env, session) {
   }
 
   try {
-    const res = await fetch(env.APPS_SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
+    if (body.action === "delete") {
+      await env.DB.prepare(
+        "DELETE FROM attendance_records WHERE student_id = ? AND session = ? AND date(timestamp) = date('now', '+7 hours')"
+      ).bind(body.id, body.session).run();
+      return Response.json({ status: "DELETED", success: true });
+    } else {
+      const existing = await env.DB.prepare(
+        "SELECT record_id FROM attendance_records WHERE student_id = ? AND session = ? AND date(timestamp) = date('now', '+7 hours')"
+      ).bind(body.id, body.session).first();
 
-    if (!res.ok) {
-      log("error", "checkin_apps_script_http_error", {
-        status: res.status,
-        statusText: res.statusText,
-        user: session.email,
-        ca: body?.ca,
-      });
-      await notifyTelegram(env, "checkin_apps_script_http_error", { status: res.status, user: session.email });
-      return Response.json({ success: false, error: "Lỗi kết nối hệ thống điểm danh" }, { status: 502 });
+      if (existing) {
+        return Response.json({ status: "EXIST", success: true });
+      }
+
+      await env.DB.prepare(
+        "INSERT INTO attendance_records (student_id, student_name, class_name, session, scanned_by) VALUES (?, ?, ?, ?, ?)"
+      ).bind(body.id, body.name, body.lop || "", body.session, body.scannedBy || "").run();
+
+      return Response.json({ status: "OK", success: true });
     }
-
-    const data = await res.json();
-
-    if (data.status !== "OK" && data.status !== "EXIST" && !data.success) {
-      log("warn", "checkin_apps_script_returned_error", {
-        error: data.error,
-        user: session.email,
-        ca: body?.ca,
-        studentId: body?.studentId,
-      });
-      await notifyTelegram(env, "checkin_apps_script_returned_error", { error: data.error, user: session.email });
-    }
-
-    return Response.json(data);
   } catch (err) {
-    log("error", "checkin_fetch_failed", { message: err.message, user: session.email, ca: body?.ca });
-    await notifyTelegram(env, "checkin_fetch_failed", { message: err.message, user: session.email, ca: body?.ca });
-    return Response.json({ success: false, error: "Không thể kết nối tới hệ thống điểm danh" }, { status: 502 });
+    if (err.message.includes('UNIQUE constraint failed')) {
+      return Response.json({ status: "EXIST", success: true });
+    }
+    log("error", "checkin_d1_failed", { message: err.message, user: session.email, ca: body?.ca });
+    await notifyTelegram(env, "checkin_d1_failed", { message: err.message, user: session.email, ca: body?.ca });
+    return Response.json({ success: false, error: "Không thể lưu điểm danh vào cơ sở dữ liệu" }, { status: 502 });
   }
 }

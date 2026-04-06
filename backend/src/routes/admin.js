@@ -1,4 +1,4 @@
-﻿// ============================
+// ============================
 // ADMIN ROUTES (/api/admin/*)
 // ============================
 
@@ -113,5 +113,51 @@ export async function handleAdmin(request, env, url) {
     }
   }
 
+  if (url.pathname === "/api/admin/sync_sheets") {
+    if (request.method === "POST") {
+      const run = await runBatchSync(env);
+      if (run.success) return Response.json(run);
+      else return Response.json(run, { status: 502 });
+    }
+  }
+
   return new Response("Not found", { status: 404 });
+}
+
+export async function runBatchSync(env) {
+  try {
+    const result = await env.DB.prepare("SELECT * FROM attendance_records WHERE status = 'pending_sync'").all();
+    const records = result.results;
+
+    if (records.length === 0) {
+       return { success: true, message: "Không có dữ liệu mới để đồng bộ", count: 0 };
+    }
+
+    const res = await fetch(env.APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "batch", records })
+    });
+
+    if (!res.ok) {
+       return { success: false, error: "Kết nối tới Google Web Apps lỗi" };
+    }
+
+    const data = await res.json();
+    
+    if (data.status === "OK") {
+       const ids = records.map(r => r.record_id);
+       for (let i = 0; i < ids.length; i += 100) {
+         const chunk = ids.slice(i, i + 100);
+         const placeholders = chunk.map(() => '?').join(',');
+         await env.DB.prepare(`UPDATE attendance_records SET status = 'synced' WHERE record_id IN (${placeholders})`).bind(...chunk).run();
+       }
+       log("info", "admin_sync_sheets_success", { count: records.length });
+       return { success: true, count: records.length };
+    } else {
+       return { success: false, error: data.error || "Gặp lỗi gửi Batch" };
+    }
+  } catch (err) {
+    log("error", "admin_sync_sheets_failed", { message: err.message });
+    return { success: false, error: "Đồng bộ thất bại" };
+  }
 }

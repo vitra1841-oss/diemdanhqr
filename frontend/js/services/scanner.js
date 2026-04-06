@@ -34,7 +34,7 @@ async function onScanSuccess(decodedText) {
       return;
     }
 
-    recordAttendance(student, session);
+    await recordAttendance(student, session);
   } catch (err) {
     showNotify("❌ " + (err?.message || "Không thể tra cứu học sinh"));
   }

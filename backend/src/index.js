@@ -1,4 +1,4 @@
-﻿// ============================
+// ============================
 // ENTRY POINT
 // ============================
 
@@ -6,7 +6,7 @@ import { log } from './utils/log.js';
 import { notifyTelegram } from './services/telegram.js';
 import { verifySession } from './services/session.js';
 import { handleAuth } from './routes/auth.js';
-import { handleAdminLogin, handleAdmin } from './routes/admin.js';
+import { handleAdminLogin, handleAdmin, runBatchSync } from './routes/admin.js';
 import { handlePageRoutes } from './routes/pages.js';
 import { handleStudentsAdmin } from './routes/students-admin.js';
 import { handleCheckin } from './routes/checkin.js';
@@ -28,6 +28,9 @@ export default {
       return new Response("Lỗi hệ thống, vui lòng thử lại", { status: 500 });
     }
   },
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runBatchSync(env));
+  }
 };
 
 async function handleRequest(request, env) {
