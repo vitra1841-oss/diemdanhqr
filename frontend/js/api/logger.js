@@ -11,6 +11,7 @@ export function sendLog(event, details = {}) {
         event,
         time: new Date().toISOString(),
         url: location.href,
+        level: details.level || "error",
         ...details,
       }),
     }).catch(() => {});

@@ -9,10 +9,10 @@ APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa5jLbOhj2F7oHjBeLND
 
 [triggers]
 crons = [
-  "30 1 * * SUN",
-  "30 3 * * SUN",
-  "30 12 * * TUE",
-  "30 12 * * THU"
+  "45 1 * * SUN",
+  "45 3 * * SUN",
+  "45 12 * * TUE",
+  "45 12 * * THU"
 ]
 
 [assets]

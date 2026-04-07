@@ -53,7 +53,7 @@ export function toggleScanner() {
       state.html5QrCode = null;
     }
 
-    state.html5QrCode = new Html5Qrcode("reader"); // eslint-disable-line no-undef
+    state.html5QrCode = new Html5Qrcode("reader");
 
     state.html5QrCode
       .start(

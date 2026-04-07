@@ -294,6 +294,7 @@ Do not assume `/admin` and `/students-admin` share the same auth flow.
 - Keep student business logic in `backend/src/services/students.js`.
 - Keep page-specific UI logic in `frontend/js/*.js`, not inline HTML.
 - Use `apply_patch` for manual file edits.
+- Do not add inline comments or annotation comments in `frontend/js/` files. Each file may only have a header comment block (the `// ============================` banner at the top). No other `//` or `/* */` comments are allowed inside functions or between statements.
 - When changing attendance behavior, inspect both:
   - Worker backend flow
   - `appscript.txt`

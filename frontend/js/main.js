@@ -34,9 +34,21 @@ window.toggleScanner = toggleScanner;
 window.manualCheckin = manualCheckin;
 window.deleteAttendance = deleteAttendance;
 
+let currentActiveSession = undefined;
+
 export function updateSessionStatus() {
   const session = getCurrentSession();
   const banner = document.getElementById("offHourBanner");
+
+  if (currentActiveSession !== undefined && currentActiveSession !== session) {
+    state.scannedStudents = {};
+    const tbody = document.getElementById("scanTableBody");
+    if (tbody) tbody.innerHTML = "";
+    const countEl = document.getElementById("count");
+    if (countEl) countEl.textContent = "0";
+    restoreAttendance();
+  }
+  currentActiveSession = session;
 
   if (session) {
     if (banner) banner.style.display = "none";

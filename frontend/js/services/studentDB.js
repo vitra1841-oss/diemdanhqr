@@ -44,7 +44,7 @@ export function initStudentDB() {
         localStorage.setItem("allStudentsCache", JSON.stringify(localStudentsList));
       }
     })
-    .catch(err => console.error("Lỗi đồng bộ danh sách:", err));
+    .catch(() => {});
 }
 
 export function upsertStudent(student) {

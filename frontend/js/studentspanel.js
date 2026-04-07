@@ -2,6 +2,23 @@ function studentsFetch(url, options = {}) {
   return fetch(url, options);
 }
 
+function reportStudentsPanelError(event, details = {}) {
+  try {
+    fetch("/api/log-error", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event,
+        page: "students-admin",
+        url: location.href,
+        time: new Date().toISOString(),
+        level: details.level || "error",
+        ...details,
+      }),
+    }).catch(() => {});
+  } catch {}
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -19,6 +36,7 @@ async function bootstrapStudentsPage() {
   try {
     const meRes = await fetch("/api/me");
     if (!meRes.ok) {
+      reportStudentsPanelError("students_admin_bootstrap_me_failed", { status: meRes.status, level: "critical" });
       showAccessDenied();
       return;
     }
@@ -31,7 +49,8 @@ async function bootstrapStudentsPage() {
 
     showStudentsContent();
     loadStudentClasses();
-  } catch {
+  } catch (err) {
+    reportStudentsPanelError("students_admin_bootstrap_exception", { message: err?.message, level: "critical" });
     showAccessDenied();
   }
 }
@@ -56,10 +75,14 @@ async function loadStudentClasses() {
       showAccessDenied();
       return;
     }
+    if (!res.ok) {
+      throw new Error("load_classes_http_" + res.status);
+    }
 
     const data = await res.json();
     populateClassFilter(data.classes || []);
-  } catch {
+  } catch (err) {
+    reportStudentsPanelError("students_admin_load_classes_failed", { message: err?.message, level: "critical" });
     wrap.innerHTML = '<div class="empty">Không thể tải danh sách lớp.</div>';
   }
 }
@@ -94,6 +117,9 @@ async function loadStudentsSheet() {
     if (res.status === 403) {
       showAccessDenied();
       return;
+    }
+    if (!res.ok) {
+      throw new Error("load_students_http_" + res.status);
     }
 
     const data = await res.json();
@@ -135,7 +161,12 @@ async function loadStudentsSheet() {
         <tbody>${rows}</tbody>
       </table>
     `;
-  } catch {
+  } catch (err) {
+    reportStudentsPanelError("students_admin_load_students_failed", {
+      message: err?.message,
+      action: "load_sheet",
+      classFilter,
+    });
     wrap.innerHTML = '<div class="empty">Lỗi tải danh sách học sinh.</div>';
   }
 }
@@ -151,27 +182,35 @@ async function addStudent() {
     return;
   }
 
-  const res = await studentsFetch("/api/students-admin", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, tenThanh, hoTen, lop }),
-  });
-  const data = await res.json();
+  try {
+    const res = await studentsFetch("/api/students-admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, tenThanh, hoTen, lop }),
+    });
+    const data = await res.json();
 
-  if (data.success) {
-    document.getElementById("studentIdInput").value = "";
-    document.getElementById("studentSaintInput").value = "";
-    document.getElementById("studentNameInput").value = "";
-    document.getElementById("studentClassInput").value = "";
-    showStudentsNotify("Đã thêm học sinh");
+    if (data.success) {
+      document.getElementById("studentIdInput").value = "";
+      document.getElementById("studentSaintInput").value = "";
+      document.getElementById("studentNameInput").value = "";
+      document.getElementById("studentClassInput").value = "";
+      showStudentsNotify("Đã thêm học sinh");
 
-    if (document.getElementById("studentClassFilter").value === lop) {
-      loadStudentsSheet();
+      if (document.getElementById("studentClassFilter").value === lop) {
+        loadStudentsSheet();
+      } else {
+        loadStudentClasses();
+      }
     } else {
-      loadStudentClasses();
+      if (res.status >= 500) {
+        reportStudentsPanelError("students_admin_create_failed", { status: res.status, studentId: id, level: "critical" });
+      }
+      showStudentsNotify(data.error || "Không thể thêm học sinh");
     }
-  } else {
-    showStudentsNotify(data.error || "Không thể thêm học sinh");
+  } catch (err) {
+    reportStudentsPanelError("students_admin_create_exception", { message: err?.message, studentId: id, level: "critical" });
+    showStudentsNotify("Không thể thêm học sinh");
   }
 }
 
@@ -186,19 +225,28 @@ async function saveStudentRow(studentId, btn) {
   };
 
   btn.disabled = true;
-  const res = await studentsFetch(`/api/students-admin/${encodeURIComponent(studentId)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json();
+  try {
+    const res = await studentsFetch(`/api/students-admin/${encodeURIComponent(studentId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
 
-  if (data.success) {
-    showStudentsNotify("Đã lưu học sinh");
-    loadStudentsSheet();
-  } else {
+    if (data.success) {
+      showStudentsNotify("Đã lưu học sinh");
+      loadStudentsSheet();
+    } else {
+      if (res.status >= 500) {
+        reportStudentsPanelError("students_admin_update_failed", { status: res.status, studentId, level: "critical" });
+      }
+      btn.disabled = false;
+      showStudentsNotify(data.error || "Không thể cập nhật học sinh");
+    }
+  } catch (err) {
     btn.disabled = false;
-    showStudentsNotify(data.error || "Không thể cập nhật học sinh");
+    reportStudentsPanelError("students_admin_update_exception", { message: err?.message, studentId, level: "critical" });
+    showStudentsNotify("Không thể cập nhật học sinh");
   }
 }
 
@@ -206,17 +254,26 @@ async function deleteStudent(studentId, btn) {
   if (!confirm("Xóa học sinh " + studentId + "?")) return;
 
   btn.disabled = true;
-  const res = await studentsFetch(`/api/students-admin/${encodeURIComponent(studentId)}`, {
-    method: "DELETE",
-  });
-  const data = await res.json();
+  try {
+    const res = await studentsFetch(`/api/students-admin/${encodeURIComponent(studentId)}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
 
-  if (data.success) {
-    showStudentsNotify("Đã xóa học sinh");
-    loadStudentsSheet();
-  } else {
+    if (data.success) {
+      showStudentsNotify("Đã xóa học sinh");
+      loadStudentsSheet();
+    } else {
+      if (res.status >= 500) {
+        reportStudentsPanelError("students_admin_delete_failed", { status: res.status, studentId, level: "critical" });
+      }
+      btn.disabled = false;
+      showStudentsNotify(data.error || "Không thể xóa học sinh");
+    }
+  } catch (err) {
     btn.disabled = false;
-    showStudentsNotify(data.error || "Không thể xóa học sinh");
+    reportStudentsPanelError("students_admin_delete_exception", { message: err?.message, studentId, level: "critical" });
+    showStudentsNotify("Không thể xóa học sinh");
   }
 }
 

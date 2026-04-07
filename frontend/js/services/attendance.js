@@ -10,17 +10,18 @@ import { showNotify } from '../utils/notify.js';
 import { clearSuggestions } from '../utils/suggestions.js';
 import { lookupStudent, upsertStudent } from './studentDB.js';
 
-export function getAttendanceCacheKey() {
+export function getAttendanceCacheKey(session) {
   const date = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Ho_Chi_Minh",
   });
-  return "attendance_" + date;
+  return "attendance_" + date + (session ? "_" + session : "");
 }
 
 function persistAttendance() {
   try {
+    const session = getCurrentSession();
     localStorage.setItem(
-      getAttendanceCacheKey(),
+      getAttendanceCacheKey(session),
       JSON.stringify(state.scannedStudents)
     );
   } catch {}
@@ -91,11 +92,17 @@ export function deleteAttendance(studentID) {
 
 export function restoreAttendance() {
   try {
+    const session = getCurrentSession();
+    const currentKey = getAttendanceCacheKey(session);
+
+    const todayDate = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+    const todayPrefix = "attendance_" + todayDate;
+
     Object.keys(localStorage)
-      .filter((k) => k.startsWith("attendance_") && k !== getAttendanceCacheKey())
+      .filter((k) => k.startsWith("attendance_") && !k.startsWith(todayPrefix))
       .forEach((k) => localStorage.removeItem(k));
 
-    const saved = localStorage.getItem(getAttendanceCacheKey());
+    const saved = localStorage.getItem(currentKey);
     if (!saved) return;
 
     const data = JSON.parse(saved);
@@ -185,7 +192,6 @@ export async function manualCheckin() {
       return;
     }
 
-    // Lưu ý: Hàm upsertStudent đã dư thừa do tìm từ mảng RAM, nhưng giữ để an toàn
     await recordAttendance(student, session);
     input.value = "";
     clearSuggestions();

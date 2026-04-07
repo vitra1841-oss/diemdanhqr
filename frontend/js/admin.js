@@ -4,6 +4,23 @@
 
 let adminToken = localStorage.getItem("adminToken") || null;
 
+function reportAdminPanelError(event, details = {}) {
+  try {
+    fetch("/api/log-error", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event,
+        page: "admin",
+        url: location.href,
+        time: new Date().toISOString(),
+        level: details.level || "error",
+        ...details,
+      }),
+    }).catch(() => {});
+  } catch {}
+}
+
 document.getElementById("password").addEventListener("keydown", (e) => {
   if (e.key === "Enter") doLogin();
 });
@@ -51,7 +68,8 @@ async function doLogin() {
     adminToken = data.token;
     localStorage.setItem("adminToken", data.token);
     showAdminScreen();
-  } catch {
+  } catch (err) {
+    reportAdminPanelError("admin_login_exception", { message: err?.message, level: "critical" });
     errorMsg.textContent = "Lỗi kết nối, thử lại";
     errorMsg.style.display = "block";
   }
@@ -102,6 +120,9 @@ async function loadUsers() {
       doLogout();
       return;
     }
+    if (!res.ok) {
+      throw new Error("load_users_http_" + res.status);
+    }
 
     const data = await res.json();
     if (!data.users?.length) {
@@ -138,7 +159,8 @@ async function loadUsers() {
         </thead>
         <tbody>${rows}</tbody>
       </table>`;
-  } catch {
+  } catch (err) {
+    reportAdminPanelError("admin_load_users_failed", { message: err?.message, level: "critical" });
     wrap.innerHTML = '<div class="empty">Lỗi tải danh sách</div>';
   }
 }
@@ -153,20 +175,28 @@ async function addUser() {
     return;
   }
 
-  const res = await authFetch("/api/admin/users", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, role, name }),
-  });
-  const data = await res.json();
+  try {
+    const res = await authFetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, role, name }),
+    });
+    const data = await res.json();
 
-  if (data.success) {
-    document.getElementById("newEmail").value = "";
-    document.getElementById("newName").value = "";
-    showNotify("Đã thêm " + email);
-    loadUsers();
-  } else {
-    showNotify(data.error || "Lỗi không xác định");
+    if (data.success) {
+      document.getElementById("newEmail").value = "";
+      document.getElementById("newName").value = "";
+      showNotify("Đã thêm " + email);
+      loadUsers();
+    } else {
+      if (res.status >= 500) {
+        reportAdminPanelError("admin_add_user_failed", { status: res.status, email, level: "critical" });
+      }
+      showNotify(data.error || "Lỗi không xác định");
+    }
+  } catch (err) {
+    reportAdminPanelError("admin_add_user_exception", { message: err?.message, email, level: "critical" });
+    showNotify("Không thể thêm user");
   }
 }
 
@@ -174,58 +204,83 @@ async function removeUser(email, role, btn) {
   if (!confirm("Xóa " + email + "?")) return;
   btn.disabled = true;
 
-  const res = await authFetch("/api/admin/users", {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, role }),
-  });
-  const data = await res.json();
+  try {
+    const res = await authFetch("/api/admin/users", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, role }),
+    });
+    const data = await res.json();
 
-  if (data.success) {
-    showNotify("Đã xóa " + email);
-    loadUsers();
-  } else {
+    if (data.success) {
+      showNotify("Đã xóa " + email);
+      loadUsers();
+    } else {
+      if (res.status >= 500) {
+        reportAdminPanelError("admin_remove_user_failed", { status: res.status, email, level: "critical" });
+      }
+      btn.disabled = false;
+      showNotify(data.error || "Lỗi không xác định");
+    }
+  } catch (err) {
     btn.disabled = false;
-    showNotify(data.error || "Lỗi không xác định");
+    reportAdminPanelError("admin_remove_user_exception", { message: err?.message, email, level: "critical" });
+    showNotify("Không thể xóa user");
   }
 }
 
 async function updateRole(email, role, select) {
   select.disabled = true;
 
-  const res = await authFetch("/api/admin/users", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, role }),
-  });
-  const data = await res.json();
+  try {
+    const res = await authFetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, role }),
+    });
+    const data = await res.json();
 
-  if (data.success) {
-    showNotify("Đổi role " + email + " -> " + role);
-  } else {
-    showNotify(data.error || "Lỗi không xác định");
+    if (data.success) {
+      showNotify("Đổi role " + email + " -> " + role);
+    } else {
+      if (res.status >= 500) {
+        reportAdminPanelError("admin_update_role_failed", { status: res.status, email, level: "critical" });
+      }
+      showNotify(data.error || "Lỗi không xác định");
+    }
+  } catch (err) {
+    reportAdminPanelError("admin_update_role_exception", { message: err?.message, email, level: "critical" });
+    showNotify("Không thể đổi role");
+  } finally {
+    select.disabled = false;
   }
-
-  select.disabled = false;
 }
 
 async function updateName(email, name, input) {
   input.disabled = true;
 
-  const res = await authFetch("/api/admin/users", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, name }),
-  });
-  const data = await res.json();
+  try {
+    const res = await authFetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, name }),
+    });
+    const data = await res.json();
 
-  if (data.success) {
-    showNotify("Đã cập nhật tên " + email);
-  } else {
-    showNotify(data.error || "Lỗi không xác định");
+    if (data.success) {
+      showNotify("Đã cập nhật tên " + email);
+    } else {
+      if (res.status >= 500) {
+        reportAdminPanelError("admin_update_name_failed", { status: res.status, email, level: "critical" });
+      }
+      showNotify(data.error || "Lỗi không xác định");
+    }
+  } catch (err) {
+    reportAdminPanelError("admin_update_name_exception", { message: err?.message, email, level: "critical" });
+    showNotify("Không thể cập nhật tên");
+  } finally {
+    input.disabled = false;
   }
-
-  input.disabled = false;
 }
 
 function showNotify(message) {
@@ -250,8 +305,11 @@ async function syncSheets() {
 
   try {
     const res = await authFetch("/api/admin/sync_sheets", { method: "POST" });
+    if (!res.ok) {
+      throw new Error("sync_sheets_http_" + res.status);
+    }
     const data = await res.json();
-    
+
     if (data.success) {
       if (data.count === 0) showNotify("Không có dữ liệu mới để đồng bộ");
       else showNotify("Đã đồng bộ thành công " + data.count + " điểm danh!");
@@ -259,6 +317,7 @@ async function syncSheets() {
       showNotify(data.error || "Có lỗi xảy ra");
     }
   } catch (err) {
+    reportAdminPanelError("admin_sync_sheets_exception", { message: err?.message, level: "critical" });
     showNotify("Không thể kết nối đến máy chủ");
   } finally {
     btn.disabled = false;
